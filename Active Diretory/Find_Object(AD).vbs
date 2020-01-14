@@ -1,12 +1,12 @@
-# Script para Saber quem esta logada em maquina especifica.
-# A busca traz : Ip, Dominio/Usuário e máquina.
+' Modificado por Jamilton Santan
+' Script faz a busca pelo IP e retorna : Ip, Dominio/Usuário e máquina.
 
 strcomputer = inputbox("Enter Computer Name or IP")
 if strcomputer = "" then
     wscript.quit
 else
 
-'ping it!
+' Faz teste com o ping
 Set objPing = GetObject("winmgmts:{impersonationLevel=impersonate}").ExecQuery _
     ("select * from Win32_PingStatus where address = '" & strcomputer & "'")
 For Each objStatus in objPing
@@ -15,7 +15,7 @@ For Each objStatus in objPing
         msgbox(strcomputer & " did not reply" & vbcrlf & vbcrlf & _
     "Please check the name and try again")
     else
-        'who's there?
+        'Coleta user
         set objWMIService = GetObject("winmgmts:" & "{impersonationLevel=impersonate}!\\" & _
     strComputer & "\root\cimv2")
         Set colSettings = objWMIService.ExecQuery("Select * from Win32_ComputerSystem")
@@ -26,5 +26,3 @@ For Each objStatus in objPing
     end if
 next
 end if
-
-#OBS : Salvar Arquivo em .VBS

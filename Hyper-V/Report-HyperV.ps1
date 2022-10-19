@@ -305,7 +305,7 @@ function sGetWmi {
     )
  
     # Base string
-    $wmiCommand = "gwmi -ComputerName $ComputerName -Namespace $Namespace -Class $Class -ErrorAction Stop"
+    $wmiCommand = "Get-WmiObject -ComputerName $ComputerName -Namespace $Namespace -Class $Class -ErrorAction Stop"
 
     # If available, add Filter parameter
     if ($Filter) {
@@ -536,7 +536,7 @@ Function sConvertBusTypeName {
 }
  
 # Convert Cluster Disk State Value to Name
-Function sConvert-ClusterDiskState {
+Function sConvertClusterDiskState {
     Param ([Byte] $StateValue)
     if ($StateValue -eq 0) { $Result = "Inherited", $stateBgColors[5], $stateWordColors[5] }
     elseif ($StateValue -eq 1) { $Result = "Initializing", $stateBgColors[4], $stateWordColors[4] }
@@ -552,7 +552,7 @@ Function sConvert-ClusterDiskState {
 }
  
 # Convert BusType Value to BusType Name
-Function sConvert-DiskPartitionStyle {
+Function sConvertDiskPartitionStyle {
     Param ([Byte] $PartitionStyleValue)
     if ($PartitionStyleValue -eq 1) {
         $Result = "MBR"
@@ -567,7 +567,7 @@ Function sConvert-DiskPartitionStyle {
 }
  
 # Generate Volume Size Colors
-Function sConvert-VolumeSizeColors {
+Function sConvertVolumeSizeColors {
  
     Param ([Byte] $FreePercent)
  
@@ -977,9 +977,9 @@ if ($Cluster) {
         sPrint -Type 1 -Message "Checking prerequisites for Hyper-V Cluster reporting..." -WriteToLogFile $True
         Start-Sleep -Seconds 3
  
-        $clusterNodesData = Get-ClusterNode -Cluster $ClusterName -ErrorAction SilentlyContinue | select Name, State
-        $ClusterNodes = ($clusterNodesData | where { $_.State -ne "Down" }).Name
-        $downClusterNodes = ($clusterNodesData | where { $_.State -eq "Down" }).Name
+        $clusterNodesData = Get-ClusterNode -Cluster $ClusterName -ErrorAction SilentlyContinue | Select-Object Name, State
+        $ClusterNodes = ($clusterNodesData | Where-Object { $_.State -ne "Down" }).Name
+        $downClusterNodes = ($clusterNodesData | Where-Object { $_.State -eq "Down" }).Name
         $ovTotalNode = ($clusterNodesData).Count
  
         if ($downClusterNodes) {
@@ -1015,10 +1015,10 @@ if ($Cluster) {
                     $clusterResourceData = Get-ClusterResource -Cluster $ClusterName
  
                     # Detect offline Virtual Machine Configuration resources
-                    $offlineVmConfigData = $clusterResourceData | where { ($_.ResourceType -eq "Virtual Machine Configuration") -and ($_.State -ne "Online") }
+                    $offlineVmConfigData = $clusterResourceData | Where-Object { ($_.ResourceType -eq "Virtual Machine Configuration") -and ($_.State -ne "Online") }
  
                     # For Cluster Overview
-                    $ovTotalVm = ($clusterResourceData | where { $_.ResourceType -eq "Virtual Machine" }).Count
+                    $ovTotalVm = ($clusterResourceData | Where-Object { $_.ResourceType -eq "Virtual Machine" }).Count
                 }
                 else {
                     sPrint -Type 2 -Message "Hyper-V role is not installed on $clusterOwnerHostName." -WriteToLogFile $True
@@ -1166,12 +1166,12 @@ foreach ($vmHostItem in $vmHosts) {
     $vmHostRunningClusVmCount = 0
     $vmHostGet = Get-VMHost -ComputerName $vmHostItem
     $vmHostVMs = Hyper-V\Get-VM -ComputerName $vmHostItem
-    $vmHostVmCount = $vmHostVMs.Count + ($offlineVmConfigData | where { $_.OwnerNode -eq "$vmHostItem" }).Count
-    $vmHostRunningVmCount = ($vmHostVMs | where { $_.State -eq "Running" }).Count
-    $vmHostRunningClusVmCount = ($vmHostVMs | where { ($_.IsClustered -eq $true) -and ($_.State -eq "Running") }).Count
+    $vmHostVmCount = $vmHostVMs.Count + ($offlineVmConfigData | Where-Object { $_.OwnerNode -eq "$vmHostItem" }).Count
+    $vmHostRunningVmCount = ($vmHostVMs | Where-Object { $_.State -eq "Running" }).Count
+    $vmHostRunningClusVmCount = ($vmHostVMs | Where-Object { ($_.IsClustered -eq $true) -and ($_.State -eq "Running") }).Count
     $vmHostRunningNonClusVmCount = $vmHostRunningVmCount - $vmHostRunningClusVmCount 
-    $vmHostTotalVProc = (($vmHostVMs | where { (($_.State -eq "Running") -or ($_.State -eq "Paused")) }).ProcessorCount | Measure-Object -Sum).Sum
-    $vmHostClusVProc = (($vmHostVMs | where { (($_.State -eq "Running") -and ($_.IsClustered -eq $true)) -or (($_.State -eq "Paused") -and ($_.IsClustered -eq $true)) }).ProcessorCount | Measure-Object -Sum).Sum
+    $vmHostTotalVProc = (($vmHostVMs | Where-Object { (($_.State -eq "Running") -or ($_.State -eq "Paused")) }).ProcessorCount | Measure-Object -Sum).Sum
+    $vmHostClusVProc = (($vmHostVMs | Where-Object { (($_.State -eq "Running") -and ($_.IsClustered -eq $true)) -or (($_.State -eq "Paused") -and ($_.IsClustered -eq $true)) }).ProcessorCount | Measure-Object -Sum).Sum
     $vmHostWmiData = Get-WmiObject -ComputerName $vmHostItem -Class Win32_OperatingSystem
  
     # For Cluster Overview
@@ -1281,8 +1281,8 @@ foreach ($vmHostItem in $vmHosts) {
     $vmHostVpLpRatio = ("{0:N2}" -f ($vmHostTotalVProc / $vmHostLpCount)).Replace(".00", "")
  
     # Computer and Processor Manufacturer/Model Info
-    $outVmHostComputerInfo = gwmi -ComputerName $vmHostItem -Class Win32_ComputerSystem -Property Manufacturer, Model
-    $outVmHostProcModel = (gwmi -ComputerName $vmHostItem -Class Win32_Processor).Name
+    $outVmHostComputerInfo = Get-WmiObject -ComputerName $vmHostItem -Class Win32_ComputerSystem -Property Manufacturer, Model
+    $outVmHostProcModel = (Get-WmiObject -ComputerName $vmHostItem -Class Win32_Processor).Name
     if ($outVmHostProcModel.count -gt 1) {
         $outVmHostProcModel = $outVmHostProcModel[0]
     }
@@ -1347,7 +1347,7 @@ if ($downClusterNodes) {
     }
 }
  
-if (($outVMHostTable -eq $null) -and ($downClusterNodes -eq $null)) {
+if (($null -eq $outVMHostTable) -and ($null -eq $downClusterNodes)) {
     if ($Cluster) {
         $outVMHostTable += "
                 <tr><!--Data Line-->
@@ -1414,7 +1414,7 @@ ForEach ($VMHostItem in $VMHosts) {
     # Offline Virtual Machine Configuration resources on this node
     if ($Cluster) {
         $offlineVmConfigs = $null
-        $offlineVmConfigs = $offlineVmConfigData | where { $_.OwnerNode -eq "$VMHostItem" }
+        $offlineVmConfigs = $offlineVmConfigData | Where-Object { $_.OwnerNode -eq "$VMHostItem" }
     }
  
     # If Hyper-V\Get-VM is success
@@ -1575,7 +1575,7 @@ ForEach ($VMHostItem in $VMHosts) {
                         $vmIsStateBgColor = ""
                         $vmIsStateWordColor = ""
                     }
-                    elseif ($VM.IntegrationServicesVersion -eq $null) {
+                    elseif ($null -eq $VM.IntegrationServicesVersion) {
                         $outVmIs = "NotDetected"
                         $outVmIsVer = "NotDetected"
                         $vmIsStateBgColor = ""
@@ -1620,19 +1620,23 @@ ForEach ($VMHostItem in $VMHosts) {
                 $getVmReplication = Get-VMReplication -ComputerName $VM.ComputerName -VMName $VM.Name
  
                 foreach ($getVmReplItem in $getVmReplication) {
-                    if ($getVmReplItem.Mode -eq "Primary") { #Primary
+                    if ($getVmReplItem.Mode -eq "Primary") {
+                        #Primary
                         $outVmReplType = "Primary"
                         $outVmReplServer = "ReplicaServer: $($getVmReplItem.ReplicaServer) &#10;"
                     }
-                    elseif ($getVmReplItem.Mode -eq "Replica" -and $getVmReplItem.RelationshipType -eq "Simple") { #Replica
+                    elseif ($getVmReplItem.Mode -eq "Replica" -and $getVmReplItem.RelationshipType -eq "Simple") {
+                        #Replica
                         $outVmReplType = "Replica"
                         $outVmReplServer = "PrimaryServer: $($getVmReplItem.PrimaryServer) &#10;"
                     }
-                    elseif ($getVmReplItem.Mode -eq "Replica" -and $getVmReplItem.RelationshipType -eq "Extended") { #Replica to Extended
+                    elseif ($getVmReplItem.Mode -eq "Replica" -and $getVmReplItem.RelationshipType -eq "Extended") {
+                        #Replica to Extended
                         $outVmReplType = "Extended"
                         $outVmReplServer = "ReplicaServer: $($getVmReplItem.ReplicaServer) &#10;"
                     }
-                    elseif ($getVmReplItem.Mode -eq "ExtendedReplica") { #Extended
+                    elseif ($getVmReplItem.Mode -eq "ExtendedReplica") {
+                        #Extended
                         $outVmReplType = "Extended"
                         $outVmReplServer = "PrimaryServer: $($getVmReplItem.PrimaryServer) &#10;"
                     }
@@ -1702,11 +1706,11 @@ ForEach ($VMHostItem in $VMHosts) {
             }
  
             # Network Adapter
-            if ($vNetworkAdapters | where { $_.VMId -eq $VM.VMId }) {
+            if ($vNetworkAdapters | Where-Object { $_.VMId -eq $VM.VMId }) {
                 $vmNetAdapterCount = 1
                 $vmNetAdapters = $null
                 $outVmNetAdapter = $null
-                $vmNetAdapters = $vNetworkAdapters | where { $_.VMId -eq $VM.VMId }
+                $vmNetAdapters = $vNetworkAdapters | Where-Object { $_.VMId -eq $VM.VMId }
  
                 foreach ($vmNetAdapter in $vmNetAdapters) {
                     # Type
@@ -1757,7 +1761,7 @@ ForEach ($VMHostItem in $VMHosts) {
                     }
  
                     # VLAN
-                    if (($vmNetAdapter.VlanSetting.AccessVlanId -eq 0) -or ($vmNetAdapter.VlanSetting.AccessVlanId -eq $null)) {
+                    if (($vmNetAdapter.VlanSetting.AccessVlanId -eq 0) -or ($null -eq $vmNetAdapter.VlanSetting.AccessVlanId)) {
                         $outVmNetAdapterVlan = "VLAN: Disabled"
                     }
                     else {
@@ -1773,7 +1777,8 @@ ForEach ($VMHostItem in $VMHosts) {
                         $outVmNetAdapterClusterMonitored = "Protected Network: On"
                     }
                     else {
-                        if (($OsVersion -like "6.2*") -or ($OsVersion -like "6.3*") -or ($OsVersion -like "10.0*")) { #if ($OsVersion -like "6.2*")
+                        if (($OsVersion -like "6.2*") -or ($OsVersion -like "6.3*") -or ($OsVersion -like "10.0*")) {
+                            #if ($OsVersion -like "6.2*")
                             $outVmNetAdapterClusterMonitored = "Protected Network: N/A"
                         }
                         else {
@@ -1822,7 +1827,7 @@ ForEach ($VMHostItem in $VMHosts) {
                 }
             }
  
-            $vmPTDisks = Get-VMHardDiskDrive -ComputerName $VMHostItem -VMname $vm.name | where { $_.Path -like "Disk*" }
+            $vmPTDisks = Get-VMHardDiskDrive -ComputerName $VMHostItem -VMname $vm.name | Where-Object { $_.Path -like "Disk*" }
  
             # Pass-through
             $vmPTDiskNo = 1
@@ -1847,7 +1852,7 @@ ForEach ($VMHostItem in $VMHosts) {
             }
  
             # VHD
-            if ($vmDisks -eq $null) {
+            if ($null -eq $vmDisks) {
                 $vmDiskOutput = "
                     <td rowspan=""0""><p style=""text-align:left""><span style=""background-color:$($stateBgColors[4]);color:$($stateWordColors[4])"">&nbsp;Does not have a virtual disk&nbsp;</span></p></td>"
                 $highL = $true
@@ -1873,10 +1878,10 @@ ForEach ($VMHostItem in $VMHosts) {
                     $activeVhdFileSize = $vmDisk.FileSize
  
                     # Get Controller Type
-                    $vmDiskControllerType = (Get-VMHardDiskDrive -ComputerName $VMHostItem -VMName $vm.VMName | where { $_.Path -eq $vmDiskPath }).ControllerType
+                    $vmDiskControllerType = (Get-VMHardDiskDrive -ComputerName $VMHostItem -VMName $vm.VMName | Where-Object { $_.Path -eq $vmDiskPath }).ControllerType
  
                     # VHD Fragmentation and Color
-                    if ($vmDisk.FragmentationPercentage -eq $null) {
+                    if ($null -eq $vmDisk.FragmentationPercentage) {
                         $vmDiskFragmentation = "N/A"
                         $vmDiskFragmentationBgColor = ""
                         $vmDiskFragmentationTextColor = ""
@@ -1907,7 +1912,7 @@ ForEach ($VMHostItem in $VMHosts) {
                         $cpNumber = $vmChekpointCount
  
                         if ($vmDiskPath.EndsWith(".avhdx", 1)) {
-                            if (($cpNumber -ne 0) -or ($cpNumber -ne $null)) {
+                            if (($cpNumber -ne 0) -or ($null -ne $cpNumber)) {
                                 $vmDiskName = "Checkpoint $cpNumber"
                                 $cpNumber = $cpNumber - 1
                             }
@@ -1929,7 +1934,7 @@ ForEach ($VMHostItem in $VMHosts) {
  
                             # Checkpoint label
                             if ($vmDiskPath.EndsWith(".avhdx", 1)) {
-                                if (($cpNumber -ne 0) -or ($cpNumber -ne $null)) {
+                                if (($cpNumber -ne 0) -or ($null -ne $cpNumber)) {
                                     $vmDiskName = "Checkpoint $cpNumber"
                                     $cpNumber = $cpNumber - 1
                                 }
@@ -1970,7 +1975,7 @@ ForEach ($VMHostItem in $VMHosts) {
                             $vmDiskData += "<p style=""margin-top:5px;text-align:left;text-indent:1nd3ntPlaceHolderpx""><abbr title=""$($vmDiskPath)"">$($vmDiskName)<span style=""font-size:10px;color:orange""> *</span></abbr> <br><span style=""display:inline-block;text-indent:1nd3ntPlaceHolderpx;font-size:10px;color:#BDBDBD"">&#10148; CurrentFileSize $($vmDiskFileSize[0])$($vmDiskFileSize[1]) (MaximumDiskSize $($vmDiskMaxSize[0])$($vmDiskMaxSize[1]))</span> <br><span style=""display:inline-block;text-indent:1nd3ntPlaceHolderpx;font-size:10px;color:#BDBDBD"">&#10148; $($vmDiskType) VHD | $($vmDiskControllerType) Controller | Fragmentation <span style=""color:$($vmDiskFragmentationTextColor);background-color:$($vmDiskFragmentationBgColor)"">$($vmDiskFragmentation)</span></span></p>"
                             $parentPath = $vmDiffDisk.ParentPath
                         }
-                        Until (($parentPath -eq $null) -or ($parentPath -eq ""))#Until (($parentPath -eq $null) -or ($parentPath -eq ""))
+                        Until (($null -eq $parentPath) -or ($parentPath -eq ""))#Until (($parentPath -eq $null) -or ($parentPath -eq ""))
                     }
                     else {
                         $vmDiskData = "<p style=""text-align:left""><abbr title=""$($vmDiskPath)"">$($vmDiskName)<span style=""font-size:10px;color:orange""> *</span></abbr> <br><span style=""font-size:10px;color:#BDBDBD"">&#10148; CurrentFileSize $($vmDiskFileSize[0])$($vmDiskFileSize[1]) (MaximumDiskSize $($vmDiskMaxSize[0])$($vmDiskMaxSize[1])) <br>&#10148; $($vmDiskType) VHD | $($vmDiskControllerType) Controller | Fragmentation <span style=""color:$($vmDiskFragmentationTextColor);background-color:$($vmDiskFragmentationBgColor)"">$($vmDiskFragmentation)</span></span></p>"
@@ -2109,8 +2114,8 @@ ForEach ($VMHostItem in $VMHosts) {
         Start-Sleep -Seconds 3
         Continue
     }
-    else
-    { # Blank
+    else {
+        # Blank
         sPrint -Type 2 -Message "$($VMHostItem.ToUpper()): Does not have Virtual Machine." -WriteToLogFile $True
         Start-Sleep -Seconds 3
     }
@@ -2148,14 +2153,14 @@ ForEach ($VMHostItem in $VMHosts) {
     }
 }
  
-if (($HighlightsOnly -eq $true) -and ($outVmTable -eq $null) -and ($cntVM -ne 0)) {
+if (($HighlightsOnly -eq $true) -and ($null -eq $outVmTable) -and ($cntVM -ne 0)) {
     $outVmTable += "
                 <tr><!--Data Line-->
                     <td colspan=""14""><p style=""text-align:center""><span style=""padding-top:1px;padding-bottom:1px;background-color:#ACFA58;color:#298A08"">&nbsp;&nbsp;All VMs are healthy&nbsp;&nbsp;</span></p></td>
                 </tr>"
 }
  
-if (($outVmTable -eq $null) -and ($cntVM -eq 0)) {
+if (($null -eq $outVmTable) -and ($cntVM -eq 0)) {
     $outVmTable += "
                 <tr><!--Data Line-->
                     <td colspan=""14""><p style=""text-align:center""><span style=""color:#BDBDBD"">No virtual machine for reporting</span></p></td>
@@ -2209,11 +2214,11 @@ if ($Cluster) {
  
     if ($clusResourceDiskData[1] -eq 1) {
         $clusResourceDiskData = $clusResourceDiskData[0] | Sort-Object
-        $clusResourceToDiskData = gwmi -ComputerName $clusterName -Namespace root\MSCluster -Class MSCluster_ResourceToDisk -Authentication PacketPrivacy -Impersonation Impersonate
-        $clusDiskToDiskPartitionData = gwmi -ComputerName $clusterName -Namespace root\MSCluster -Class MSCluster_DiskToDiskPartition -Authentication PacketPrivacy -Impersonation Impersonate
-        $clusDiskPartitionData = gwmi -ComputerName $clusterName -Namespace root\MSCluster -Class MSCluster_DiskPartition -Authentication PacketPrivacy -Impersonation Impersonate
-        $msftDiskData = gwmi -ComputerName $clusterName -Namespace root\Microsoft\Windows\Storage -Class MSFT_Disk | where { $_.IsClustered -eq $true }
-        $msClusterData = gwmi -ComputerName $clusterName -Namespace root\MSCluster -Class MSCluster_Cluster -Authentication PacketPrivacy -Impersonation Impersonate
+        $clusResourceToDiskData = Get-WmiObject -ComputerName $clusterName -Namespace root\MSCluster -Class MSCluster_ResourceToDisk -Authentication PacketPrivacy -Impersonation Impersonate
+        $clusDiskToDiskPartitionData = Get-WmiObject -ComputerName $clusterName -Namespace root\MSCluster -Class MSCluster_DiskToDiskPartition -Authentication PacketPrivacy -Impersonation Impersonate
+        $clusDiskPartitionData = Get-WmiObject -ComputerName $clusterName -Namespace root\MSCluster -Class MSCluster_DiskPartition -Authentication PacketPrivacy -Impersonation Impersonate
+        $msftDiskData = Get-WmiObject -ComputerName $clusterName -Namespace root\Microsoft\Windows\Storage -Class MSFT_Disk | Where-Object { $_.IsClustered -eq $true }
+        $msClusterData = Get-WmiObject -ComputerName $clusterName -Namespace root\MSCluster -Class MSCluster_Cluster -Authentication PacketPrivacy -Impersonation Impersonate
  
         # If Quorum disk exists, determine the drive letter
         if ($msClusterData.QuorumTypeValue -eq 3) {
@@ -2234,7 +2239,8 @@ if ($Cluster) {
             $chargerVolumeTable = $null
  
             # Cluster Disk State, If...
-            if ($clusterDisk.State -eq 2) { # Online
+            if ($clusterDisk.State -eq 2) {
+                # Online
                 # IsClusterSharedVolume True
                 if ($clusterDisk.IsClusterSharedVolume -eq $true) {
                     # Clear
@@ -2245,39 +2251,39 @@ if ($Cluster) {
  
                     # Get DiskID and CSV Paths
                     $clusResourceRELPATH = $clusterDisk.__RELPATH
-                    $clusDiskID = ($clusResourceToDiskData | where { $_.GroupComponent -eq $clusResourceRELPATH }).PartComponent
+                    $clusDiskID = ($clusResourceToDiskData | Where-Object { $_.GroupComponent -eq $clusResourceRELPATH }).PartComponent
                     $shortClusDiskID = $clusDiskID.TrimStart("MSCluster_Disk.Id=`"").TrimEnd("`"")
  
                     # Get physical disk information form MSFT_Disk
-                    $busTypeName = sConvertBusTypeName -BusTypeValue ($msftDiskData | where { (($_.Signature -eq $shortClusDiskID) -or ($_.Guid -eq $shortClusDiskID)) }).BusType
-                    $diskPartitionStyle = sConvert-DiskPartitionStyle -PartitionStyleValue ($msftDiskData | where { (($_.Signature -eq $shortClusDiskID) -or ($_.Guid -eq $shortClusDiskID)) }).PartitionStyle
-                    $clusterDiskSize = sConvertSize -DiskVolumeSpace ($msftDiskData | where { (($_.Signature -eq $shortClusDiskID) -or ($_.Guid -eq $shortClusDiskID)) }).Size -DiskVolumeSpaceUnit byte
-                    $clusterDiskAllocatedSize = sConvertSize -DiskVolumeSpace ($msftDiskData | where { (($_.Signature -eq $shortClusDiskID) -or ($_.Guid -eq $shortClusDiskID)) }).AllocatedSize byte
-                    $clusterDiskUnAllocatedSize = sConvertSize -DiskVolumeSpace (($msftDiskData | where { (($_.Signature -eq $shortClusDiskID) -or ($_.Guid -eq $shortClusDiskID)) }).Size - ($msftDiskData | where { (($_.Signature -eq $shortClusDiskID) -or ($_.Guid -eq $shortClusDiskID)) }).AllocatedSize) -DiskVolumeSpaceUnit byte
+                    $busTypeName = sConvertBusTypeName -BusTypeValue ($msftDiskData | Where-Object { (($_.Signature -eq $shortClusDiskID) -or ($_.Guid -eq $shortClusDiskID)) }).BusType
+                    $diskPartitionStyle = sConvertDiskPartitionStyle -PartitionStyleValue ($msftDiskData | Where-Object { (($_.Signature -eq $shortClusDiskID) -or ($_.Guid -eq $shortClusDiskID)) }).PartitionStyle
+                    $clusterDiskSize = sConvertSize -DiskVolumeSpace ($msftDiskData | Where-Object { (($_.Signature -eq $shortClusDiskID) -or ($_.Guid -eq $shortClusDiskID)) }).Size -DiskVolumeSpaceUnit byte
+                    $clusterDiskAllocatedSize = sConvertSize -DiskVolumeSpace ($msftDiskData | Where-Object { (($_.Signature -eq $shortClusDiskID) -or ($_.Guid -eq $shortClusDiskID)) }).AllocatedSize byte
+                    $clusterDiskUnAllocatedSize = sConvertSize -DiskVolumeSpace (($msftDiskData | Where-Object { (($_.Signature -eq $shortClusDiskID) -or ($_.Guid -eq $shortClusDiskID)) }).Size - ($msftDiskData | Where-Object { (($_.Signature -eq $shortClusDiskID) -or ($_.Guid -eq $shortClusDiskID)) }).AllocatedSize) -DiskVolumeSpaceUnit byte
  
                     # If maintenance mode enabled
                     if ($clusterDisk.StatusInformation -eq 1) {
-                        $clusDiskPartitionPaths = ((($clusDiskToDiskPartitionData | where { $_.GroupComponent -eq $clusDiskID }).PartComponent) -replace "MSCluster_DiskPartition.Path=`"", "").TrimEnd("`"")
+                        $clusDiskPartitionPaths = ((($clusDiskToDiskPartitionData | Where-Object { $_.GroupComponent -eq $clusDiskID }).PartComponent) -replace "MSCluster_DiskPartition.Path=`"", "").TrimEnd("`"")
                         $clusDiskVolumeData = Get-ClusterSharedVolume -Cluster $ClusterName -Name $clusterDisk.Name
  
                         foreach ($clusDiskPartitionPath in $clusDiskPartitionPaths) {
                             $outDiskName = $clusterDisk.Name
-                            $outVolumePath = ($clusDiskVolumeData.SharedVolumeInfo | where { $_.Partition.Name -eq $clusDiskPartitionPath }).FriendlyVolumeName
+                            $outVolumePath = ($clusDiskVolumeData.SharedVolumeInfo | Where-Object { $_.Partition.Name -eq $clusDiskPartitionPath }).FriendlyVolumeName
                             $outVolumeName = $outVolumePath.Split("\")[-1]
-                            $outVolumeFS = (($clusDiskVolumeData.SharedVolumeInfo.Partition) | where { $_.Name -eq $clusDiskPartitionPath }).FileSystem
+                            $outVolumeFS = (($clusDiskVolumeData.SharedVolumeInfo.Partition) | Where-Object { $_.Name -eq $clusDiskPartitionPath }).FileSystem
                             $outDiskState = "Maintenance", "#BDD7EE", "#204F7A"
                             $outDiskOwner = $clusterDisk.OwnerNode
                             $outBusType = $busTypeName
                             $outDiskPartStyle = $diskPartitionStyle
-                            $outVolumeTotalSize = sConvertSize -DiskVolumeSpace (($clusDiskVolumeData.SharedVolumeInfo.Partition) | where { $_.Name -eq $clusDiskPartitionPath }).Size -DiskVolumeSpaceUnit byte
-                            $outVolumeFreeSpace = sConvertSize -DiskVolumeSpace (($clusDiskVolumeData.SharedVolumeInfo.Partition) | where { $_.Name -eq $clusDiskPartitionPath }).FreeSpace -DiskVolumeSpaceUnit byte
-                            $outVolumeUsedSpace = sConvertSize -DiskVolumeSpace (($clusDiskVolumeData.SharedVolumeInfo.Partition) | where { $_.Name -eq $clusDiskPartitionPath }).UsedSpace -DiskVolumeSpaceUnit byte
-                            $volumeFreePercent = [math]::Round((($clusDiskVolumeData.SharedVolumeInfo.Partition) | where { $_.Name -eq $clusDiskPartitionPath }).PercentFree)
+                            $outVolumeTotalSize = sConvertSize -DiskVolumeSpace (($clusDiskVolumeData.SharedVolumeInfo.Partition) | Where-Object { $_.Name -eq $clusDiskPartitionPath }).Size -DiskVolumeSpaceUnit byte
+                            $outVolumeFreeSpace = sConvertSize -DiskVolumeSpace (($clusDiskVolumeData.SharedVolumeInfo.Partition) | Where-Object { $_.Name -eq $clusDiskPartitionPath }).FreeSpace -DiskVolumeSpaceUnit byte
+                            $outVolumeUsedSpace = sConvertSize -DiskVolumeSpace (($clusDiskVolumeData.SharedVolumeInfo.Partition) | Where-Object { $_.Name -eq $clusDiskPartitionPath }).UsedSpace -DiskVolumeSpaceUnit byte
+                            $volumeFreePercent = [math]::Round((($clusDiskVolumeData.SharedVolumeInfo.Partition) | Where-Object { $_.Name -eq $clusDiskPartitionPath }).PercentFree)
                             $outVolumeFreePercent = "&nbsp;~%" + $volumeFreePercent + " free&nbsp;"
                             $outVolumeUsage = "CSV"
  
                             # Volume Free Space Colors
-                            $volumeFreeSpaceColors = sConvert-VolumeSizeColors -FreePercent $volumeFreePercent
+                            $volumeFreeSpaceColors = sConvertVolumeSizeColors -FreePercent $volumeFreePercent
  
                             $outVolumeTable += "
                 <tr><!--Data Line-->
@@ -2296,35 +2302,35 @@ if ($Cluster) {
                         }
                     }
                     else {
-                        $clusDiskPartitionPaths = (($clusDiskToDiskPartitionData | where { $_.GroupComponent -eq $clusDiskID }).PartComponent).TrimStart("MSCluster_DiskPartition.Path=`"\\\\?\\Volume").TrimEnd("\\`"")
+                        $clusDiskPartitionPaths = (($clusDiskToDiskPartitionData | Where-Object { $_.GroupComponent -eq $clusDiskID }).PartComponent).TrimStart("MSCluster_DiskPartition.Path=`"\\\\?\\Volume").TrimEnd("\\`"")
  
                         foreach ($clusDiskPartitionPath in $clusDiskPartitionPaths) {
                             $highL = $false
                             $outDiskName = $clusterDisk.Name
-                            $outVolumePath = ($clusDiskPartitionData | where { $_.Path -match $clusDiskPartitionPath }).MountPoints
-                            $outVolumeName = (($clusDiskPartitionData | where { $_.Path -match $clusDiskPartitionPath }).MountPoints).Split("\")[-1]
-                            $outVolumeLabel = ($clusDiskPartitionData | where { $_.Path -match $clusDiskPartitionPath }).VolumeLabel
-                            $outVolumeFS = ($clusDiskPartitionData | where { $_.Path -match $clusDiskPartitionPath }).FileSystem
-                            $outDiskState = (sConvert-ClusterDiskState -StateValue $clusterDisk.State)
+                            $outVolumePath = ($clusDiskPartitionData | Where-Object { $_.Path -match $clusDiskPartitionPath }).MountPoints
+                            $outVolumeName = (($clusDiskPartitionData | Where-Object { $_.Path -match $clusDiskPartitionPath }).MountPoints).Split("\")[-1]
+                            $outVolumeLabel = ($clusDiskPartitionData | Where-Object { $_.Path -match $clusDiskPartitionPath }).VolumeLabel
+                            $outVolumeFS = ($clusDiskPartitionData | Where-Object { $_.Path -match $clusDiskPartitionPath }).FileSystem
+                            $outDiskState = (sConvertClusterDiskState -StateValue $clusterDisk.State)
                             if ($outDiskState[0] -ne "Online") {
                                 $highL = $true
                             }
                             $outDiskOwner = $clusterDisk.OwnerNode
                             $outBusType = $busTypeName
                             $outDiskPartStyle = $diskPartitionStyle
-                            $outVolumeTotalSize = (sConvertSize -DiskVolumeSpace (($clusDiskPartitionData | where { $_.Path -match $clusDiskPartitionPath }).TotalSize) -DiskVolumeSpaceUnit mb)
-                            $outVolumeFreeSpace = (sConvertSize -DiskVolumeSpace (($clusDiskPartitionData | where { $_.Path -match $clusDiskPartitionPath }).FreeSpace) -DiskVolumeSpaceUnit mb)
-                            $outVolumeUsedSpace = (sConvertSize -DiskVolumeSpace (($clusDiskPartitionData | where { $_.Path -match $clusDiskPartitionPath }).TotalSize - ($clusDiskPartitionData | where { $_.Path -match $clusDiskPartitionPath }).FreeSpace) -DiskVolumeSpaceUnit mb)
-                            $volumeFreePercent = [math]::Round((((($clusDiskPartitionData | where { $_.Path -match $clusDiskPartitionPath }).FreeSpace) / (($clusDiskPartitionData | where { $_.Path -match $clusDiskPartitionPath }).TotalSize))) * 100)
+                            $outVolumeTotalSize = (sConvertSize -DiskVolumeSpace (($clusDiskPartitionData | Where-Object { $_.Path -match $clusDiskPartitionPath }).TotalSize) -DiskVolumeSpaceUnit mb)
+                            $outVolumeFreeSpace = (sConvertSize -DiskVolumeSpace (($clusDiskPartitionData | Where-Object { $_.Path -match $clusDiskPartitionPath }).FreeSpace) -DiskVolumeSpaceUnit mb)
+                            $outVolumeUsedSpace = (sConvertSize -DiskVolumeSpace (($clusDiskPartitionData | Where-Object { $_.Path -match $clusDiskPartitionPath }).TotalSize - ($clusDiskPartitionData | Where-Object { $_.Path -match $clusDiskPartitionPath }).FreeSpace) -DiskVolumeSpaceUnit mb)
+                            $volumeFreePercent = [math]::Round((((($clusDiskPartitionData | Where-Object { $_.Path -match $clusDiskPartitionPath }).FreeSpace) / (($clusDiskPartitionData | Where-Object { $_.Path -match $clusDiskPartitionPath }).TotalSize))) * 100)
                             $outVolumeFreePercent = "&nbsp;~%" + $volumeFreePercent + " free&nbsp;"
                             $outVolumeUsage = "CSV"
  
                             # Volume Free Space Colors
-                            $volumeFreeSpaceColors = sConvert-VolumeSizeColors -FreePercent $volumeFreePercent
+                            $volumeFreeSpaceColors = sConvertVolumeSizeColors -FreePercent $volumeFreePercent
  
                             # For Cluster Overview
-                            $ovUsedStorage = $ovUsedStorage + (($clusDiskPartitionData | where { $_.Path -match $clusDiskPartitionPath }).TotalSize - ($clusDiskPartitionData | where { $_.Path -match $clusDiskPartitionPath }).FreeSpace)
-                            $ovTotalStorage = $ovTotalStorage + ($clusDiskPartitionData | where { $_.Path -match $clusDiskPartitionPath }).TotalSize
+                            $ovUsedStorage = $ovUsedStorage + (($clusDiskPartitionData | Where-Object { $_.Path -match $clusDiskPartitionPath }).TotalSize - ($clusDiskPartitionData | Where-Object { $_.Path -match $clusDiskPartitionPath }).FreeSpace)
+                            $ovTotalStorage = $ovTotalStorage + ($clusDiskPartitionData | Where-Object { $_.Path -match $clusDiskPartitionPath }).TotalSize
  
                             if ($volumeFreePercent -le 10) {
                                 $highL = $true
@@ -2334,15 +2340,15 @@ if ($Cluster) {
                             $outActiveVHD = $null
                             $chargerActiveVhd = $null
  
-                            $chargerActiveVhd = $activeVhds | where { $_.Path -like "$outVolumePath*" }
+                            $chargerActiveVhd = $activeVhds | Where-Object { $_.Path -like "$outVolumePath*" }
  
                             if ($chargerActiveVhd) {
                                 $activeVhdCount = $chargerActiveVhd.Count
-                                $activeVhdTotalFileSize = sConvertSize -DiskVolumeSpace ($chargerActiveVhd.FileSize | measure -Sum).Sum -DiskVolumeSpaceUnit byte
-                                $activeVhdTotalDiskSize = sConvertSize -DiskVolumeSpace ($chargerActiveVhd.Size | measure -Sum).Sum -DiskVolumeSpaceUnit byte
+                                $activeVhdTotalFileSize = sConvertSize -DiskVolumeSpace ($chargerActiveVhd.FileSize | Measure-Object -Sum).Sum -DiskVolumeSpaceUnit byte
+                                $activeVhdTotalDiskSize = sConvertSize -DiskVolumeSpace ($chargerActiveVhd.Size | Measure-Object -Sum).Sum -DiskVolumeSpaceUnit byte
  
                                 # Color
-                                if ((($chargerActiveVhd.Size | measure -Sum).Sum) / 1024 / 1024 -gt ($clusDiskPartitionData | where { $_.Path -match $clusDiskPartitionPath }).TotalSize) {
+                                if ((($chargerActiveVhd.Size | Measure-Object -Sum).Sum) / 1024 / 1024 -gt ($clusDiskPartitionData | Where-Object { $_.Path -match $clusDiskPartitionPath }).TotalSize) {
                                     $activeVhdTotalFileSizeColor = "#9C6500", "#FBD95B"
                                     $highL = $true
                                 }
@@ -2384,7 +2390,8 @@ if ($Cluster) {
                         }
                     } 
                 }
-                else { # IsClusterSharedVolume False
+                else {
+                    # IsClusterSharedVolume False
                     # Clear
                     $clusResourceRELPATH = $null
                     $clusDiskID = $null
@@ -2393,16 +2400,16 @@ if ($Cluster) {
  
                     # Get DiskID and Partition Paths (drives)
                     $clusResourceRELPATH = $clusterDisk.__RELPATH
-                    $clusDiskID = ($clusResourceToDiskData | where { $_.GroupComponent -eq $clusResourceRELPATH }).PartComponent
+                    $clusDiskID = ($clusResourceToDiskData | Where-Object { $_.GroupComponent -eq $clusResourceRELPATH }).PartComponent
                     $shortClusDiskID = $clusDiskID.TrimStart("MSCluster_Disk.Id=`"").TrimEnd("`"")
-                    $clusDiskPartitionPaths = ($clusDiskToDiskPartitionData | where { $_.GroupComponent -eq $clusDiskID }).PartComponent
+                    $clusDiskPartitionPaths = ($clusDiskToDiskPartitionData | Where-Object { $_.GroupComponent -eq $clusDiskID }).PartComponent
  
                     # Get physical disk information form MSFT_Disk
-                    $busTypeName = sConvertBusTypeName -BusTypeValue ($msftDiskData | where { (($_.Signature -eq $shortClusDiskID) -or ($_.Guid -eq $shortClusDiskID)) }).BusType
-                    $diskPartitionStyle = sConvert-DiskPartitionStyle -PartitionStyleValue ($msftDiskData | where { (($_.Signature -eq $shortClusDiskID) -or ($_.Guid -eq $shortClusDiskID)) }).PartitionStyle
-                    $clusterDiskSize = sConvertSize -DiskVolumeSpace ($msftDiskData | where { (($_.Signature -eq $shortClusDiskID) -or ($_.Guid -eq $shortClusDiskID)) }).Size -DiskVolumeSpaceUnit byte
-                    $clusterDiskAllocatedSize = sConvertSize -DiskVolumeSpace ($msftDiskData | where { (($_.Signature -eq $shortClusDiskID) -or ($_.Guid -eq $shortClusDiskID)) }).AllocatedSize byte
-                    $clusterDiskUnAllocatedSize = sConvertSize -DiskVolumeSpace (($msftDiskData | where { (($_.Signature -eq $shortClusDiskID) -or ($_.Guid -eq $shortClusDiskID)) }).Size - ($msftDiskData | where { (($_.Signature -eq $shortClusDiskID) -or ($_.Guid -eq $shortClusDiskID)) }).AllocatedSize) -DiskVolumeSpaceUnit byte
+                    $busTypeName = sConvertBusTypeName -BusTypeValue ($msftDiskData | Where-Object { (($_.Signature -eq $shortClusDiskID) -or ($_.Guid -eq $shortClusDiskID)) }).BusType
+                    $diskPartitionStyle = sConvertDiskPartitionStyle -PartitionStyleValue ($msftDiskData | Where-Object { (($_.Signature -eq $shortClusDiskID) -or ($_.Guid -eq $shortClusDiskID)) }).PartitionStyle
+                    $clusterDiskSize = sConvertSize -DiskVolumeSpace ($msftDiskData | Where-Object { (($_.Signature -eq $shortClusDiskID) -or ($_.Guid -eq $shortClusDiskID)) }).Size -DiskVolumeSpaceUnit byte
+                    $clusterDiskAllocatedSize = sConvertSize -DiskVolumeSpace ($msftDiskData | Where-Object { (($_.Signature -eq $shortClusDiskID) -or ($_.Guid -eq $shortClusDiskID)) }).AllocatedSize byte
+                    $clusterDiskUnAllocatedSize = sConvertSize -DiskVolumeSpace (($msftDiskData | Where-Object { (($_.Signature -eq $shortClusDiskID) -or ($_.Guid -eq $shortClusDiskID)) }).Size - ($msftDiskData | Where-Object { (($_.Signature -eq $shortClusDiskID) -or ($_.Guid -eq $shortClusDiskID)) }).AllocatedSize) -DiskVolumeSpaceUnit byte
  
                     # If partition(s) on physical disk exists
                     if ($clusDiskPartitionPaths) {
@@ -2423,15 +2430,15 @@ if ($Cluster) {
                                 $outDiskState = "Maintenance", "#BDD7EE", "#204F7A"
                             }
                             else {
-                                $outDiskState = (sConvert-ClusterDiskState -StateValue $clusterDisk.State)
+                                $outDiskState = (sConvertClusterDiskState -StateValue $clusterDisk.State)
                             }
  
                             if ($outDiskState[0] -ne "Online") {
                                 $highL = $true
                             }
  
-                            $outVolumeLabel = ($clusDiskPartitionData | where { $_.__RELPATH -eq $clusDiskPartitionPath }).VolumeLabel
-                            $outVolumeFS = ($clusDiskPartitionData | where { $_.__RELPATH -eq $clusDiskPartitionPath }).FileSystem
+                            $outVolumeLabel = ($clusDiskPartitionData | Where-Object { $_.__RELPATH -eq $clusDiskPartitionPath }).VolumeLabel
+                            $outVolumeFS = ($clusDiskPartitionData | Where-Object { $_.__RELPATH -eq $clusDiskPartitionPath }).FileSystem
  
  
                             # Volume Name
@@ -2465,31 +2472,31 @@ if ($Cluster) {
  
                             # Volume Info
                             if (!$assignedPT) {
-                                $outVolumeTotalSize = (sConvertSize -DiskVolumeSpace (($clusDiskPartitionData | where { $_.__RELPATH -eq $clusDiskPartitionPath }).TotalSize) -DiskVolumeSpaceUnit mb)
-                                $outVolumeFreeSpace = (sConvertSize -DiskVolumeSpace (($clusDiskPartitionData | where { $_.__RELPATH -eq $clusDiskPartitionPath }).FreeSpace) -DiskVolumeSpaceUnit mb)
-                                $outVolumeUsedSpace = (sConvertSize -DiskVolumeSpace (($clusDiskPartitionData | where { $_.__RELPATH -eq $clusDiskPartitionPath }).TotalSize - ($clusDiskPartitionData | where { $_.__RELPATH -eq $clusDiskPartitionPath }).FreeSpace) -DiskVolumeSpaceUnit mb)
-                                $volumeFreePercent = [math]::Round((((($clusDiskPartitionData | where { $_.__RELPATH -eq $clusDiskPartitionPath }).FreeSpace) / (($clusDiskPartitionData | where { $_.__RELPATH -eq $clusDiskPartitionPath }).TotalSize))) * 100)
+                                $outVolumeTotalSize = (sConvertSize -DiskVolumeSpace (($clusDiskPartitionData | Where-Object { $_.__RELPATH -eq $clusDiskPartitionPath }).TotalSize) -DiskVolumeSpaceUnit mb)
+                                $outVolumeFreeSpace = (sConvertSize -DiskVolumeSpace (($clusDiskPartitionData | Where-Object { $_.__RELPATH -eq $clusDiskPartitionPath }).FreeSpace) -DiskVolumeSpaceUnit mb)
+                                $outVolumeUsedSpace = (sConvertSize -DiskVolumeSpace (($clusDiskPartitionData | Where-Object { $_.__RELPATH -eq $clusDiskPartitionPath }).TotalSize - ($clusDiskPartitionData | Where-Object { $_.__RELPATH -eq $clusDiskPartitionPath }).FreeSpace) -DiskVolumeSpaceUnit mb)
+                                $volumeFreePercent = [math]::Round((((($clusDiskPartitionData | Where-Object { $_.__RELPATH -eq $clusDiskPartitionPath }).FreeSpace) / (($clusDiskPartitionData | Where-Object { $_.__RELPATH -eq $clusDiskPartitionPath }).TotalSize))) * 100)
                                 $outVolumeFreePercent = "&nbsp;~%" + $volumeFreePercent + " free&nbsp;"
  
                                 # For Cluster Overview
                                 if (($outVolumeUsage -eq "Volume") -and ($clusterDisk.StatusInformation -ne 1) -and ($driveLetterExist -eq $true)) {
-                                    $ovUsedStorage = $ovUsedStorage + (($clusDiskPartitionData | where { $_.__RELPATH -eq $clusDiskPartitionPath }).TotalSize - ($clusDiskPartitionData | where { $_.__RELPATH -eq $clusDiskPartitionPath }).FreeSpace)
-                                    $ovTotalStorage = $ovTotalStorage + ($clusDiskPartitionData | where { $_.__RELPATH -eq $clusDiskPartitionPath }).TotalSize
+                                    $ovUsedStorage = $ovUsedStorage + (($clusDiskPartitionData | Where-Object { $_.__RELPATH -eq $clusDiskPartitionPath }).TotalSize - ($clusDiskPartitionData | Where-Object { $_.__RELPATH -eq $clusDiskPartitionPath }).FreeSpace)
+                                    $ovTotalStorage = $ovTotalStorage + ($clusDiskPartitionData | Where-Object { $_.__RELPATH -eq $clusDiskPartitionPath }).TotalSize
                                 }
  
                                 # Active VHD
                                 $outActiveVHD = $null
                                 $chargerActiveVhd = $null
  
-                                $chargerActiveVhd = $activeVhds | where { ($_.Path -like "$outVolumeName*") -and ($_.Host -eq $clusterDisk.OwnerNode) }
+                                $chargerActiveVhd = $activeVhds | Where-Object { ($_.Path -like "$outVolumeName*") -and ($_.Host -eq $clusterDisk.OwnerNode) }
  
                                 if ($chargerActiveVhd) {
                                     $activeVhdCount = $chargerActiveVhd.Count
-                                    $activeVhdTotalFileSize = sConvertSize -DiskVolumeSpace ($chargerActiveVhd.FileSize | measure -Sum).Sum -DiskVolumeSpaceUnit byte
-                                    $activeVhdTotalDiskSize = sConvertSize -DiskVolumeSpace ($chargerActiveVhd.Size | measure -Sum).Sum -DiskVolumeSpaceUnit byte
+                                    $activeVhdTotalFileSize = sConvertSize -DiskVolumeSpace ($chargerActiveVhd.FileSize | Measure-Object -Sum).Sum -DiskVolumeSpaceUnit byte
+                                    $activeVhdTotalDiskSize = sConvertSize -DiskVolumeSpace ($chargerActiveVhd.Size | Measure-Object -Sum).Sum -DiskVolumeSpaceUnit byte
  
                                     # Color
-                                    if ((($chargerActiveVhd.Size | measure -Sum).Sum) / 1024 / 1024 -gt ($clusDiskPartitionData | where { $_.__RELPATH -eq $clusDiskPartitionPath }).TotalSize) {
+                                    if ((($chargerActiveVhd.Size | Measure-Object -Sum).Sum) / 1024 / 1024 -gt ($clusDiskPartitionData | Where-Object { $_.__RELPATH -eq $clusDiskPartitionPath }).TotalSize) {
                                         $activeVhdTotalFileSizeColor = "#9C6500", "#FBD95B"
                                         $highL = $true
                                     }
@@ -2513,7 +2520,7 @@ if ($Cluster) {
                             }
  
                             # Volume Free Space Colors
-                            $volumeFreeSpaceColors = sConvert-VolumeSizeColors -FreePercent $volumeFreePercent
+                            $volumeFreeSpaceColors = sConvertVolumeSizeColors -FreePercent $volumeFreePercent
  
                             if ($volumeFreePercent -le 10) {
                                 $highL = $true
@@ -2563,7 +2570,7 @@ if ($Cluster) {
                             $outDiskState = "Maintenance", "#BDD7EE", "#204F7A"
                         }
                         else {
-                            $outDiskState = (sConvert-ClusterDiskState -StateValue $clusterDisk.State)
+                            $outDiskState = (sConvertClusterDiskState -StateValue $clusterDisk.State)
                         }
  
                         if ($outDiskState[0] -ne "Online") {
@@ -2618,10 +2625,11 @@ if ($Cluster) {
                     } 
                 }
             }
-            elseif (($clusterDisk.State -eq 3) -or ($clusterDisk.State -eq 127)) { # Offline
+            elseif (($clusterDisk.State -eq 3) -or ($clusterDisk.State -eq 127)) {
+                # Offline
                 if ($HighlightsOnly -eq $false) {
                     $outDiskName = $clusterDisk.Name
-                    $outDiskState = (sConvert-ClusterDiskState -StateValue $clusterDisk.State)
+                    $outDiskState = (sConvertClusterDiskState -StateValue $clusterDisk.State)
                     $outDiskOwner = $clusterDisk.OwnerNode
  
                     $outVolumeTable += "
@@ -2640,9 +2648,10 @@ if ($Cluster) {
                 </tr>"
                 }
             }
-            elseif (($clusterDisk.State -eq 4) -or ($clusterDisk.State -eq 126)) { # Failed
+            elseif (($clusterDisk.State -eq 4) -or ($clusterDisk.State -eq 126)) {
+                # Failed
                 $outDiskName = $clusterDisk.Name
-                $outDiskState = (sConvert-ClusterDiskState -StateValue $clusterDisk.State)
+                $outDiskState = (sConvertClusterDiskState -StateValue $clusterDisk.State)
                 $outDiskOwner = $clusterDisk.OwnerNode
  
                 $outVolumeTable += "
@@ -2660,9 +2669,10 @@ if ($Cluster) {
                     <td><p>-</p></td>
                 </tr>"
             }
-            else { # Others
+            else {
+                # Others
                 $outDiskName = $clusterDisk.Name
-                $outDiskState = (sConvert-ClusterDiskState -StateValue $clusterDisk.State)
+                $outDiskState = (sConvertClusterDiskState -StateValue $clusterDisk.State)
                 $outDiskOwner = $clusterDisk.OwnerNode
  
                 $outVolumeTable += "
@@ -2706,14 +2716,14 @@ if ($VMHost) {
         $LogicalDisks = sGetWmi -ComputerName $ComputerName -Namespace root\CIMv2 -Class Win32_LogicalDisk -AI -Filter "DriveType='3'"
         if ($LogicalDisks[1] -eq 1) {
             $LogicalDisks = $LogicalDisks[0]
-            $SystemDrive = ((gwmi -ComputerName $ComputerName -Class Win32_OperatingSystem).SystemDirectory).Substring(0, 2)
+            $SystemDrive = ((Get-WmiObject -ComputerName $ComputerName -Class Win32_OperatingSystem).SystemDirectory).Substring(0, 2)
  
             # Get WMI Data
-            $logicalToDiskPartitionData = gwmi -ComputerName $ComputerName Win32_LogicalDiskToPartition
-            $physicalDiskPathData = gwmi -ComputerName $ComputerName Win32_DiskDriveToDiskPartition
-            $physicalDiskNameData = gwmi -ComputerName $ComputerName Win32_DiskDrive
-            $msftDiskIdData = gwmi -ComputerName $ComputerName -Namespace root\Microsoft\Windows\Storage -Class MSFT_Partition
-            $msftDiskData = gwmi -ComputerName $ComputerName -Namespace root\Microsoft\Windows\Storage -Class MSFT_Disk
+            $logicalToDiskPartitionData = Get-WmiObject -ComputerName $ComputerName Win32_LogicalDiskToPartition
+            $physicalDiskPathData = Get-WmiObject -ComputerName $ComputerName Win32_DiskDriveToDiskPartition
+            $physicalDiskNameData = Get-WmiObject -ComputerName $ComputerName Win32_DiskDrive
+            $msftDiskIdData = Get-WmiObject -ComputerName $ComputerName -Namespace root\Microsoft\Windows\Storage -Class MSFT_Partition
+            $msftDiskData = Get-WmiObject -ComputerName $ComputerName -Namespace root\Microsoft\Windows\Storage -Class MSFT_Disk
  
             # Each logical disk
             foreach ($LogicalDisk in $LogicalDisks) {
@@ -2728,13 +2738,13 @@ if ($VMHost) {
                 $msftDisk = $null
  
                 # Filter for physical disk name
-                $logicalToDiskPartition = ($logicalToDiskPartitionData | where { $_.Dependent -eq $LogicalDisk.Path }).Antecedent
-                $physicalDiskPath = ($physicalDiskPathData | where { $_.Dependent -eq $logicalToDiskPartition }).Antecedent
-                $physicalDiskName = (($physicalDiskNameData | where { ($_.Path).Path -eq $physicalDiskPath }).Name).Replace("\\.\PHYSICALDRIVE", "Disk ")
+                $logicalToDiskPartition = ($logicalToDiskPartitionData | Where-Object { $_.Dependent -eq $LogicalDisk.Path }).Antecedent
+                $physicalDiskPath = ($physicalDiskPathData | Where-Object { $_.Dependent -eq $logicalToDiskPartition }).Antecedent
+                $physicalDiskName = (($physicalDiskNameData | Where-Object { ($_.Path).Path -eq $physicalDiskPath }).Name).Replace("\\.\PHYSICALDRIVE", "Disk ")
  
                 # Filter for other physical disk information
-                $msftDiskId = ($msftDiskIdData | where { $_.DriveLetter -eq ($LogicalDisk.DeviceID).TrimEnd(":") }).DiskId
-                $msftDisk = $msftDiskData | where { $_.ObjectId -eq $msftDiskId }
+                $msftDiskId = ($msftDiskIdData | Where-Object { $_.DriveLetter -eq ($LogicalDisk.DeviceID).TrimEnd(":") }).DiskId
+                $msftDisk = $msftDiskData | Where-Object { $_.ObjectId -eq $msftDiskId }
  
                 # Logical disk (volume) information
                 $outLogicalDiskName = $LogicalDisk.Name
@@ -2751,7 +2761,7 @@ if ($VMHost) {
                 $outMsftDiskSize = sConvertSize -DiskVolumeSpace $msftDisk.Size -DiskVolumeSpaceUnit byte
                 $outMsftDiskAllocatedSize = sConvertSize -DiskVolumeSpace $msftDisk.AllocatedSize -DiskVolumeSpaceUnit byte
  
-                if (($msftDisk.Size -eq $null) -and ($msftDisk.AllocatedSize -eq $null)) {
+                if (($null -eq $msftDisk.Size) -and ($null -eq $msftDisk.AllocatedSize)) {
                     $outmsftDiskUnallocatedSize = "N/A", ""
                 }
                 else {
@@ -2759,7 +2769,7 @@ if ($VMHost) {
                 }
  
                 $outMsftDiskBusType = sConvertBusTypeName -BusTypeValue $msftDisk.BusType
-                $outMsftDiskPartitionStyle = sConvert-DiskPartitionStyle -PartitionStyleValue $msftDisk.PartitionStyle
+                $outMsftDiskPartitionStyle = sConvertDiskPartitionStyle -PartitionStyleValue $msftDisk.PartitionStyle
                 $msftDiskState = "Online"
                 $msftDiskOwner = ($ComputerName).ToUpper()
  
@@ -2772,7 +2782,7 @@ if ($VMHost) {
                 }
  
                 # Volume Free Space Colors
-                $LogicalDiskFreeSpaceColors = sConvert-VolumeSizeColors -FreePercent $LogicalDiskFreePercent
+                $LogicalDiskFreeSpaceColors = sConvertVolumeSizeColors -FreePercent $LogicalDiskFreePercent
                 if ($LogicalDiskFreePercent -le 10) {
                     $highL = $true
                 }
@@ -2781,15 +2791,15 @@ if ($VMHost) {
                 $outActiveVHD = $null
                 $chargerActiveVhd = $null
  
-                $chargerActiveVhd = $activeVhds | where { ($_.Path -like "$outLogicalDiskName*") -and ($_.Host -eq $msftDiskOwner) }
+                $chargerActiveVhd = $activeVhds | Where-Object { ($_.Path -like "$outLogicalDiskName*") -and ($_.Host -eq $msftDiskOwner) }
  
                 if ($chargerActiveVhd) {
                     $activeVhdCount = $chargerActiveVhd.Count
-                    $activeVhdTotalFileSize = sConvertSize -DiskVolumeSpace ($chargerActiveVhd.FileSize | measure -Sum).Sum -DiskVolumeSpaceUnit byte
-                    $activeVhdTotalDiskSize = sConvertSize -DiskVolumeSpace ($chargerActiveVhd.Size | measure -Sum).Sum -DiskVolumeSpaceUnit byte
+                    $activeVhdTotalFileSize = sConvertSize -DiskVolumeSpace ($chargerActiveVhd.FileSize | Measure-Object -Sum).Sum -DiskVolumeSpaceUnit byte
+                    $activeVhdTotalDiskSize = sConvertSize -DiskVolumeSpace ($chargerActiveVhd.Size | Measure-Object -Sum).Sum -DiskVolumeSpaceUnit byte
  
                     # Color
-                    if (($chargerActiveVhd.Size | measure -Sum).Sum -gt ($LogicalDisk.Size)) {
+                    if (($chargerActiveVhd.Size | Measure-Object -Sum).Sum -gt ($LogicalDisk.Size)) {
                         $activeVhdTotalFileSizeColor = "#9C6500", "#FBD95B"
                         $highL = $true
                     }
@@ -2851,7 +2861,7 @@ if ($VMHost) {
     }
 }
  
-if ($outVolumeTable -eq $null) {
+if ($null -eq $outVolumeTable) {
     if ($Cluster) {
         $outVolumeTable += "
                 <tr><!--Data Line-->
@@ -2877,10 +2887,10 @@ $outVolumeTableEnd = "
 #region Generate Cluster Overview Information
 #---------------
  
-if ($ovTotalNode -eq $null) { $ovTotalNode = 0 }
-if ($ovTotalVm -eq $null) { $ovTotalVm = 0 }
-if ($ovRunningVm -eq $null) { $ovRunningVm = 0 }
-if ($ovTotalLP -eq $null) { $ovTotalLP = 0 }
+if ($null -eq $ovTotalNode) { $ovTotalNode = 0 }
+if ($null -eq $ovTotalVm) { $ovTotalVm = 0 }
+if ($null -eq $ovRunningVm) { $ovRunningVm = 0 }
+if ($null -eq $ovTotalLP) { $ovTotalLP = 0 }
  
 $ovUsedMemory = sConvertSize -DiskVolumeSpace $ovUsedMemory -DiskVolumeSpaceUnit kb
 if ($ovUsedMemory[0] -eq "N/A") { $ovUsedMemory = 0, "GB" }

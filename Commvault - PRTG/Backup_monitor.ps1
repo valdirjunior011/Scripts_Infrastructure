@@ -11,18 +11,9 @@ Param
     $server = " ",
     $completedtime = "24"
 )
-$windowsUserName = "Domain\User"
-$windowsPassword = 'Password'
-$secpasswd = ConvertTo-SecureString $windowsPassword -AsPlainText -Force
-$credentials = New-Object System.Management.Automation.PSCredential ($windowsUserName, $secpasswd)
-Connect-CVServer -Server itls0255 -Credential $credentials
-
-#STATUS
-#-------------------------------------------------------------
-$OK = 0
-$WARNING = 1
-$CRITICAL = 2
-#-------------------------------------------------------------
+$GetCredential = Get-Credential
+$credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $GetCredential.UserName, ($GetCredential.Password)
+Connect-CVServer -Server $server -Credential $credential
 
 $bkp_run = Get-CVJob -CompletedTime $completedtime | Where-Object { $_.status -eq 'Running' -and $_.destClientName -eq $server }
 $bkp_fail = Get-CVJob -CompletedTime $completedtime | Where-Object { $_.status -eq 'Failed' -and $_.destClientName -eq $server }

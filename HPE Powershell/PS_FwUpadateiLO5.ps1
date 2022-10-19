@@ -284,7 +284,7 @@ if ($errors -gt 0) {
     try {
         Write-Host "Operation Done with $errors error(s)! Elapsed Time: $ts" -ForegroundColor Red -BackgroundColor White
         LogWrite -level "INFO" -message  "Operation Done with $errors errors! Elapsed Time: $ts"
-        LogEmail -from "valdir.junior@voith.com" -to "valdir.junior@voith.com" -subject "Error running Script $workingFile" -body "There have been $errors errors" -attachment $global:logFile
+        LogEmail -from "Email" -to "Email" -subject "Error running Script $workingFile" -body "There have been $errors errors" -attachment $global:logFile
     }
     catch {
         Write-Output "Sending Email failed"
@@ -294,7 +294,7 @@ elseif ($warnings -gt 0) {
     try {
         Write-Host "Operation Done with $warnings error(s)! Elapsed Time: $ts" -ForegroundColor Red -BackgroundColor White
         LogWrite -level "INFO" -message  "Operation Done with $warnings errors! Elapsed Time: $ts"
-        LogEmail -from "valdir.junior@voith.com" -to "valdir.junior@voith.com" -subject "Error running Script $workingFile" -body "There have been $errors errors" -attachment $global:logFile
+        LogEmail -from "Email" -to "Email" -subject "Error running Script $workingFile" -body "There have been $errors errors" -attachment $global:logFile
     }
     catch {
         Write-Output "Sending Email failed"

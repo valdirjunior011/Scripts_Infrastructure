@@ -1,28 +1,107 @@
-' Modificado por Jamilton Santan
-' Script faz a busca pelo IP e retorna : Ip, Dominio/Usuário e máquina.
+#---------------------------------------------------------[Initialisations]--------------------------------------------------------
+# Init PowerShell Gui
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+#---------------------------------------------------------[Form and Script]--------------------------------------------------------
 
-strcomputer = inputbox("Enter Computer Name or IP")
-if strcomputer = "" then
-    wscript.quit
-else
+$window = New-Object System.Windows.Forms.Form
+$window.Width = 450
+$window.Height = 298
 
-' Faz teste com o ping
-Set objPing = GetObject("winmgmts:{impersonationLevel=impersonate}").ExecQuery _
-    ("select * from Win32_PingStatus where address = '" & strcomputer & "'")
-For Each objStatus in objPing
-    If IsNull(objStatus.StatusCode) or objStatus.StatusCode<>0 Then
-        'request timed out
-        msgbox(strcomputer & " did not reply" & vbcrlf & vbcrlf & _
-    "Please check the name and try again")
-    else
-        'Coleta user
-        set objWMIService = GetObject("winmgmts:" & "{impersonationLevel=impersonate}!\\" & _
-    strComputer & "\root\cimv2")
-        Set colSettings = objWMIService.ExecQuery("Select * from Win32_ComputerSystem")
-        For Each objComputer in colSettings
-            msgbox("System Name: " & objComputer.Name & vbcrlf & "User Logged in : " & _
-    objcomputer.username  & vbcrlf & "Domain: " & objComputer.Domain)
-        Next
-    end if
-next
-end if
+$Label = New-Object System.Windows.Forms.Label
+$Label.Location = New-Object System.Drawing.Size(10, 10)
+$Label.Text = "Enter Computer Name or IP"
+$Label.AutoSize = $True
+$window.Controls.Add($Label)
+
+$windowTextBox = New-Object System.Windows.Forms.TextBox
+$windowTextBox.Location = New-Object System.Drawing.Size(50, 40)
+$windowTextBox.Size = New-Object System.Drawing.Size(350, 50)
+$window.Controls.Add($windowTextBox)
+
+$Label1 = New-Object System.Windows.Forms.Label
+$Label1.Location = New-Object System.Drawing.Size(10, 80)
+$Label1.Text = "Results"
+$Label1.AutoSize = $True
+$window.Controls.Add($Label1)
+
+$Label2 = New-Object System.Windows.Forms.Label
+$Label2.Location = New-Object System.Drawing.Size(10, 110)
+$Label2.Text = "System Name:"
+$Label2.AutoSize = $True
+$window.Controls.Add($Label2)
+
+$windowTextBox1 = New-Object System.Windows.Forms.TextBox
+$windowTextBox1.Location = New-Object System.Drawing.Size(120, 110)
+#$windowTextBox1.Size = New-Object System.Drawing.Size(350, 250)
+$window.Controls.Add($windowTextBox1)
+
+$Label3 = New-Object System.Windows.Forms.Label
+$Label3.Location = New-Object System.Drawing.Size(10, 140)
+$Label3.Text = "User Logged:"
+$Label3.AutoSize = $True
+$window.Controls.Add($Label3)
+
+$windowTextBox2 = New-Object System.Windows.Forms.TextBox
+$windowTextBox2.Location = New-Object System.Drawing.Size(120, 140)
+#$windowTextBox2.Size = New-Object System.Drawing.Size(350, 250)
+$window.Controls.Add($windowTextBox2)
+
+$Label4 = New-Object System.Windows.Forms.Label
+$Label4.Location = New-Object System.Drawing.Size(10, 170)
+$Label4.Text = "Domain:"
+$Label4.AutoSize = $True
+$window.Controls.Add($Label4)
+
+$windowTextBox3 = New-Object System.Windows.Forms.TextBox
+$windowTextBox3.Location = New-Object System.Drawing.Size(120, 170)
+#$windowTextBox3.Size = New-Object System.Drawing.Size(350, 250)
+$window.Controls.Add($windowTextBox3)
+
+$windowButton2 = New-Object System.Windows.Forms.Button
+$windowButton2.Location = New-Object System.Drawing.Size(100, 200)
+$windowButton2.Size = New-Object System.Drawing.Size(50, 50)
+$windowButton2.Text = "Clean"
+$windowButton2.Add_Click({
+        # $window.clean()
+        $windowTextBox.Clear()
+        $windowTextBox1.Clear()
+        $windowTextBox2.Clear()
+        $windowTextBox3.Clear()
+
+    })
+
+$windowButton1 = New-Object System.Windows.Forms.Button
+$windowButton1.Location = New-Object System.Drawing.Size(150, 200)
+$windowButton1.Size = New-Object System.Drawing.Size(50, 50)
+$windowButton1.Text = "Close"
+$windowButton1.Add_Click({
+        $window.dispose()
+    })
+$windowButton = New-Object System.Windows.Forms.Button
+$windowButton.Location = New-Object System.Drawing.Size(50, 200)
+$windowButton.Size = New-Object System.Drawing.Size(50, 50)
+$windowButton.Text = "OK"
+$windowButton.Add_Click({
+        $strcomputer = $windowTextBox.Text
+        # Ping Verification $true follow if not Write Host
+        If ($windowTextBox.Text -eq "") {
+            $windowTextBox.Text = "Empty is not allow! Please entry with valid hostname or IP"
+        }
+        elseif ( Test-Connection -ComputerName $strcomputer -count 1 -Quiet -ErrorAction SilentlyContinue) {
+            $Results = (Get-WmiObject -ComputerName $strcomputer -Class Win32_ComputerSystem -ErrorAction SilentlyContinue)
+            $windowTextBox1.Text = "$($Results.PSComputerName)"
+            $windowTextBox2.Text = "$($Results.UserName)"
+            $windowTextBox3.Text = "$($Results.Domain)"
+        }
+        else {
+            $windowTextBox.Text = "Computer $strcomputer is Offiline or not exist"
+        }
+    
+    })
+ 
+$window.Controls.Add($windowButton)
+$window.Controls.Add($windowButton1)
+$window.Controls.Add($windowButton2)
+
+[void]$window.ShowDialog()

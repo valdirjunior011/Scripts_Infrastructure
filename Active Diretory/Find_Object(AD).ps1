@@ -2,11 +2,35 @@
 # Init PowerShell Gui
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
-#---------------------------------------------------------[Form and Script]--------------------------------------------------------
 
+#Load dlls into context of the current console session
+Add-Type -Name Window -Namespace Console -MemberDefinition '
+    [DllImport("Kernel32.dll")]
+    public static extern IntPtr GetConsoleWindow();
+ 
+    [DllImport("user32.dll")]
+    public static extern bool ShowWindow(IntPtr hWnd, Int32 nCmdShow);'
+#---------------------------------------------------------[Functions]--------------------------------------------------------
+function Start-ShowConsole {
+    $PSConsole = [Console.Window]::GetConsoleWindow()
+    [Console.Window]::ShowWindow($PSConsole, 5)
+}
+     
+function Start-HideConsole {
+    $PSConsole = [Console.Window]::GetConsoleWindow()
+    [Console.Window]::ShowWindow($PSConsole, 0)
+}
+#---------------------------------------------------------[Form and Script]--------------------------------------------------------
+Start-HideConsole
 $window = New-Object System.Windows.Forms.Form
+$window.Text = "Check Device Information"
 $window.Width = 450
 $window.Height = 298
+$window.StartPosition = "CenterScreen"
+$window.KeyPreview = $True
+$window.MaximumSize = $window.Size
+$window.MinimumSize = $window.Size
+ 
 
 $Label = New-Object System.Windows.Forms.Label
 $Label.Location = New-Object System.Drawing.Size(10, 10)
@@ -59,7 +83,7 @@ $windowTextBox3.Location = New-Object System.Drawing.Size(120, 170)
 $window.Controls.Add($windowTextBox3)
 
 $windowButton2 = New-Object System.Windows.Forms.Button
-$windowButton2.Location = New-Object System.Drawing.Size(100, 200)
+$windowButton2.Location = New-Object System.Drawing.Size(120, 200)
 $windowButton2.Size = New-Object System.Drawing.Size(50, 50)
 $windowButton2.Text = "Clean"
 $windowButton2.Add_Click({
@@ -72,14 +96,14 @@ $windowButton2.Add_Click({
     })
 
 $windowButton1 = New-Object System.Windows.Forms.Button
-$windowButton1.Location = New-Object System.Drawing.Size(150, 200)
+$windowButton1.Location = New-Object System.Drawing.Size(200, 200)
 $windowButton1.Size = New-Object System.Drawing.Size(50, 50)
 $windowButton1.Text = "Close"
 $windowButton1.Add_Click({
         $window.dispose()
     })
 $windowButton = New-Object System.Windows.Forms.Button
-$windowButton.Location = New-Object System.Drawing.Size(50, 200)
+$windowButton.Location = New-Object System.Drawing.Size(30, 200)
 $windowButton.Size = New-Object System.Drawing.Size(50, 50)
 $windowButton.Text = "OK"
 $windowButton.Add_Click({

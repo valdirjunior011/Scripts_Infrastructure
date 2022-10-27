@@ -43,51 +43,47 @@ $windowTextBox.Location = New-Object System.Drawing.Size(50, 40)
 $windowTextBox.Size = New-Object System.Drawing.Size(350, 50)
 $window.Controls.Add($windowTextBox)
 
-$Label1 = New-Object System.Windows.Forms.Label
-$Label1.Location = New-Object System.Drawing.Size(10, 80)
-$Label1.Text = "Results"
-$Label1.AutoSize = $True
-$window.Controls.Add($Label1)
+$resultsLabel = New-Object System.Windows.Forms.Label
+$resultsLabel.Location = New-Object System.Drawing.Size(10, 80)
+$resultsLabel.Text = "Results:"
+$resultsLabel.AutoSize = $True
+$window.Controls.Add($resultsLabel)
 
-$Label2 = New-Object System.Windows.Forms.Label
-$Label2.Location = New-Object System.Drawing.Size(10, 110)
-$Label2.Text = "System Name:"
-$Label2.AutoSize = $True
-$window.Controls.Add($Label2)
+$systemLabel = New-Object System.Windows.Forms.Label
+$systemLabel.Location = New-Object System.Drawing.Size(10, 110)
+$systemLabel.Text = "System Name:"
+$systemLabel.AutoSize = $True
+$window.Controls.Add($systemLabel)
 
 $windowTextBox1 = New-Object System.Windows.Forms.TextBox
 $windowTextBox1.Location = New-Object System.Drawing.Size(120, 110)
-#$windowTextBox1.Size = New-Object System.Drawing.Size(350, 250)
 $window.Controls.Add($windowTextBox1)
 
-$Label3 = New-Object System.Windows.Forms.Label
-$Label3.Location = New-Object System.Drawing.Size(10, 140)
-$Label3.Text = "User Logged:"
-$Label3.AutoSize = $True
-$window.Controls.Add($Label3)
+$userLabel = New-Object System.Windows.Forms.Label
+$userLabel.Location = New-Object System.Drawing.Size(10, 140)
+$userLabel.Text = "User Logged:"
+$userLabel.AutoSize = $True
+$window.Controls.Add($userLabel)
 
 $windowTextBox2 = New-Object System.Windows.Forms.TextBox
 $windowTextBox2.Location = New-Object System.Drawing.Size(120, 140)
-#$windowTextBox2.Size = New-Object System.Drawing.Size(350, 250)
 $window.Controls.Add($windowTextBox2)
 
-$Label4 = New-Object System.Windows.Forms.Label
-$Label4.Location = New-Object System.Drawing.Size(10, 170)
-$Label4.Text = "Domain:"
-$Label4.AutoSize = $True
-$window.Controls.Add($Label4)
+$DomainLabel = New-Object System.Windows.Forms.Label
+$DomainLabel.Location = New-Object System.Drawing.Size(10, 170)
+$DomainLabel.Text = "Domain:"
+$DomainLabel.AutoSize = $True
+$window.Controls.Add($DomainLabel)
 
 $windowTextBox3 = New-Object System.Windows.Forms.TextBox
 $windowTextBox3.Location = New-Object System.Drawing.Size(120, 170)
-#$windowTextBox3.Size = New-Object System.Drawing.Size(350, 250)
 $window.Controls.Add($windowTextBox3)
 
-$windowButton2 = New-Object System.Windows.Forms.Button
-$windowButton2.Location = New-Object System.Drawing.Size(120, 200)
-$windowButton2.Size = New-Object System.Drawing.Size(50, 50)
-$windowButton2.Text = "Clean"
-$windowButton2.Add_Click({
-        # $window.clean()
+$cleanButton = New-Object System.Windows.Forms.Button
+$cleanButton.Location = New-Object System.Drawing.Size(120, 200)
+$cleanButton.Size = New-Object System.Drawing.Size(50, 50)
+$cleanButton.Text = "Clean"
+$cleanButton.Add_Click({
         $windowTextBox.Clear()
         $windowTextBox1.Clear()
         $windowTextBox2.Clear()
@@ -95,18 +91,18 @@ $windowButton2.Add_Click({
 
     })
 
-$windowButton1 = New-Object System.Windows.Forms.Button
-$windowButton1.Location = New-Object System.Drawing.Size(200, 200)
-$windowButton1.Size = New-Object System.Drawing.Size(50, 50)
-$windowButton1.Text = "Close"
-$windowButton1.Add_Click({
+$closeButton = New-Object System.Windows.Forms.Button
+$closeButton.Location = New-Object System.Drawing.Size(200, 200)
+$closeButton.Size = New-Object System.Drawing.Size(50, 50)
+$closeButton.Text = "Close"
+$closeButton.Add_Click({
         $window.dispose()
     })
-$windowButton = New-Object System.Windows.Forms.Button
-$windowButton.Location = New-Object System.Drawing.Size(30, 200)
-$windowButton.Size = New-Object System.Drawing.Size(50, 50)
-$windowButton.Text = "OK"
-$windowButton.Add_Click({
+$okButton = New-Object System.Windows.Forms.Button
+$okButton.Location = New-Object System.Drawing.Size(30, 200)
+$okButton.Size = New-Object System.Drawing.Size(50, 50)
+$okButton.Text = "OK"
+$okButton.Add_Click({
         $strcomputer = $windowTextBox.Text
         # Ping Verification $true follow if not Write Host
         If ($windowTextBox.Text -eq "") {
@@ -124,8 +120,8 @@ $windowButton.Add_Click({
     
     })
  
-$window.Controls.Add($windowButton)
-$window.Controls.Add($windowButton1)
-$window.Controls.Add($windowButton2)
+$window.Controls.Add($okButton)
+$window.Controls.Add($closeButton)
+$window.Controls.Add($cleanButton)
 
 [void]$window.ShowDialog()

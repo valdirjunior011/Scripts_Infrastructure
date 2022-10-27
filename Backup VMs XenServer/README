@@ -1,49 +1,48 @@
 ==========================
-==   Instalação e Uso   ==
+== Installation and How Use ==
 ==========================
 
-Primeiro, Copiar esse script para seu XenServer (ou XenServer poll), E transformar em executavel.
-Um padrão para armazenar esse arquivo é:
+First, Copy this script to your XenServer (or XenServer poll), AND turn it into an executable.
+A default for storing this file is:
 
 /usr/local/bin/snapback.sh.
 
-Próximo Passo, criar uma tarefa agendada (cron) para que o script possa ser executado diariamente após 1AM.
-O arquivo a ser criado é  /etc/cron.d/backup com a linha a seguir:
+Next, create a cron task so that the script can be run daily after 1AM.
+The file to create is /etc/cron.d/backup with the following line:
 
-2 1 * * * root /usr/local/bin/snapback.sh > /var/log/snapback.log 2>&1
+2 1 \* \* \* root /usr/local/bin/snapback.sh > /var/log/snapback.log 2>&1
 
-Essa linha também irá adicionar as ações de log no arquivo /var/log/snapback.log 
-Você agora precisa editar o script e mudar a variavel DEST_SR para o UUID da sua storage onde você pretende armazenar seus backups.
+This line will also add the logging actions to the file /var/log/snapback.log
+You now need to edit the script and change the variable DEST_SR to the UUID of your storage where you intend to store your backups.
 
-*Para encontar esse UUID basta clicar na sua SR no Xencenter, o valor de UUID será mostrado parecido a este exemplo "2c01dc26-f525-70d6-dedf-00baaec76645".
+\*To find this UUID just click on your SR in Xencenter, the UUID value will be shown similar to this example "2c01dc26-f525-70d6-dedf-00baaec76645".
 
-Por fim, você precisa configurar sua politica de backup e retenção das suas VMs.
-No Xencenter clique com botão esquerdo em cima da sua VM e selecione "Propriedades",
-Clique em "Custom Fields"e depois "Edit Custom Fields". Você deve adicionar dois textos nos campos:
+Finally you need to configure your VM backup and retention policy.
+In Xencenter left click on your VM and select "Properties",
+Click "Custom Fields" and then "Edit Custom Fields". You must add two texts to the fields:
 
+backup: this can be "daily", "weekly" or "monthly". If it is set to
+weekly by default it will run on a Sunday, and if set to monthly
+it will run on the first Sunday of the month. This day can be changed in the
+top of the script - see the WEEKLY_ON and MONTHLY_ON variables.
 
-backup: pode ser "daily", "weekly" ou "monthly". Se estiver definido como
-semanalmente, por padrão, será executado em um domingo e, se definido como mensal,
-será executado no primeiro domingo do mês. Este dia pode ser alterado no
-parte superior do script - consulte as variáveis ​​WEEKLY_ON e MONTHLY_ON.
+retain: how many previous backups (in addition to the currently running files)
+backup) to keep. So setting it to a value of "2" would mean that after
+one backup is run, you will have three backups in total.
 
-reter: quantos backups anteriores (além dos arquivos em execução no momento)
-backup) para manter. Portanto, configurá-lo para um valor "2" significaria que, após
-Se um backup for executado, você terá três backups no total.
+The script will look for these fields when it runs and ignore any VM
+that does not have them set. You can also see them in the Xencenter summary
+summary and properties for the VM.
 
-O script procurará esses campos quando for executado e ignorará qualquer VM
-que não os tem definido. Você também pode vê-los no resumo do Xencenter
-e propriedades para a VM.
+Now you can run the script manually or wait until the cron job
+job starts. It will produce a detailed log in the console (or log file if
+run cron) and when finished you will see the backup of your
+VMs listed in Xencenter.
 
-Agora você pode executar o script manualmente ou aguardar até que o trabalho cron
-começa. Ele produzirá um log detalhado no console (ou arquivo de log, se
-execute o cron) e, quando terminar, você verá o backup do seu modelo
-VMs listadas no Xencenter.
+If you find that this clutters up Xencenter's display a bit, you can always
+hide them (View->Server View->Custom Templates).
 
-Se você achar que isso atrapalha um pouco a exibição do Xencenter, você sempre pode
-oculta-los (Exibir-> Exibição do servidor-> Modelos personalizados).
+To restore a VM from a backup, right click and choose "New Backup Template".
+backup template".
 
-Para restaurar uma VM a partir de um backup, clique com o botão direito do mouse e escolha "Novo modelo
-de backup ". 
-
-Isso é tudo
+That's all

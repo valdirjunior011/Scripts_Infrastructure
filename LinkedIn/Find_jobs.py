@@ -17,8 +17,10 @@ f = csv.writer(open(filename, 'w', newline='', encoding="utf-8"))
 f.writerow(['Job Name', 'Job Link'])
 
 #### Searching Keywords
-JobTitle = 'Devops'
-place = 'Brazil'
+#### JobTitle put %20 ex. 'Devops'+'%20'+'Engineer'
+#### Place = County or City
+JobTitle = ''
+place = ''
 
 #### 25 jobs for Page 
 #### Changing ( 25, 50, 75, etc )

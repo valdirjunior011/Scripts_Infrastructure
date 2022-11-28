@@ -23,7 +23,7 @@ $date = Get-Date -Format d
 $dateDB = Get-Date -Format yyyyMM
 
 # Import Logging Functions
-. "\\HDHA4050.euro1.voith.net\Services_D3-3b\Scripts\Logging\Logging_Functions.ps1"
+. "\Logging Functions\Logging_Functions.ps1"
 $logName = "$date.log"
 
 $global:logFile = $logPath + $logName

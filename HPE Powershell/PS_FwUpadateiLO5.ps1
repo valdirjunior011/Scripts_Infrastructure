@@ -124,7 +124,7 @@ catch {
 Write-Host "Getting iLO5 Servers and Export to CSV" -ForegroundColor White -BackgroundColor Blue    
 LogWrite -level "INFO" -message "Getting iLO5 Servers and Export to CSV"
 
-Get-HPOVServer -ApplianceConnection $ConnectedSessions | Select-Object servername, shortmodel, mpmodel, mpfirmwareVersion | Where-Object mpmodel -eq "iLO5" |
+Get-HPOVServer -ApplianceConnection $ConnectedSessions | Select-Object servername, shortmodel, mpmodel, mpfirmwareVersion | Where-Object {$_.mpmodel -eq "iLO5" -and $_.mpfirmwareVersion -eq "2.72 Sep 04 2022"} |
 ForEach-Object {
     new-object psobject -Property @{
         ServerName      = $_.servername
@@ -162,7 +162,7 @@ add-type -TypeDefinition  @"
 # Computes selection  
 Write-Host "Building Array List of Servers iLO" -ForegroundColor White -BackgroundColor Blue  
 LogWrite -level "INFO" -message "Building Array List of Servers iLO"
-$computes = (Get-HPOVServer -ApplianceConnection $ConnectedSessions | Where-Object mpmodel -eq "iLO5")
+$computes = (Get-HPOVServer -ApplianceConnection $ConnectedSessions | Where-Object {$_.mpmodel -eq "iLO5" -and $_.mpfirmwareVersion -eq "2.72 Sep 04 2022"})
  
 #######################################################################################################################
 
@@ -200,7 +200,7 @@ ForEach ($compute in $computes) {
         LogWrite -level "INFO" -message "Connectiong on iLO and updating the Firmware"
 
         try {
-            $task = Update-HPEiLOFirmware -TPMEnabled -Location $iLO5_location -Connection $connection -Confirm:$False -Force
+            $task = Update-HPEiLOFirmware -TPMEnabled -Location $iLO5_location -Connection $connection -Confirm:$False -UploadTimeout 900 -Force
             Write-Host "$iloModel $iloIP [$Ilohostname - $serverName - $Model]: $($task.statusinfo.message)" -ForegroundColor White -BackgroundColor Blue
             LogWrite -level "INFO" -message "`n$iloModel $iloIP [$Ilohostname - $serverName - $Model]: $($task.statusinfo.message)"
         }
@@ -214,7 +214,7 @@ ForEach ($compute in $computes) {
     
 }
 
-Start-Sleep -Seconds 10
+Start-Sleep -Seconds 30
 
 Write-Host "Gettiing new Firmware Version After Updated" -ForegroundColor White -BackgroundColor Blue   
 LogWrite -level "INFO" -message "Gettiing new Firmware Version After Updated"

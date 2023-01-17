@@ -13,9 +13,9 @@ $creationDate = (Get-ChildItem $workingFile).CreationTime
 $creationDate = Get-Date -Date "$creationDate" -Format "yyyy-MM-dd"
 $lastModified = (Get-ChildItem $workingFile).LastWriteTime
 $lastModified = Get-Date -Date "$lastModified" -Format "yyyy-MM-dd HH:mm:ss"
-$logPath = ""
-$csv = ""
-$iLO5_Location = "" <# Location of the iLO5 firmware USE .bin file #> 
+$logPath = "\\hdhx0288\scripts\PS_FwUpadateiLO5\Log\1\"
+$csv = "\\hdhx0288\scripts\PS_FwUpadateiLO5\csv\1"
+$iLO5_Location = "\\hdha4351\o_v_d_idr\HPE\ilo\ilo5\2.78\ilo5_278.bin" <# Location of the iLO5 firmware USE .bin file #> 
 
 # Dates
 $date = Get-Date -Format dd_MM_yyyy
@@ -31,7 +31,7 @@ $warnings = 0
 # Import Logging Functions
 Write-Host "Creating LogFile" -ForegroundColor White -BackgroundColor Blue
 
-. "\Logging Functions\Logging_Functions.ps1"
+. "\\hdha4050\Services_D3-3b\Scripts\Logging\Logging_Functions.ps1"
 $logName = "$date.log"
 
 $global:logFile = $logPath + $logName
@@ -124,7 +124,7 @@ catch {
 Write-Host "Getting iLO5 Servers and Export to CSV" -ForegroundColor White -BackgroundColor Blue    
 LogWrite -level "INFO" -message "Getting iLO5 Servers and Export to CSV"
 
-Get-HPOVServer -ApplianceConnection $ConnectedSessions | Select-Object servername, shortmodel, mpmodel, mpfirmwareVersion | Where-Object {$_.mpmodel -eq "iLO5" -and $_.mpfirmwareVersion -eq "2.72 Sep 04 2022"} |
+Get-HPOVServer -ApplianceConnection $ConnectedSessions | Select-Object servername, shortmodel, mpmodel, mpfirmwareVersion | Where-Object {$_.mpmodel -eq "iLO5" -and $_.mpfirmwareVersion -eq "2.72 Sep 04 2022" -and $_.servername -contains "HDH*"} |
 ForEach-Object {
     new-object psobject -Property @{
         ServerName      = $_.servername
@@ -162,7 +162,7 @@ add-type -TypeDefinition  @"
 # Computes selection  
 Write-Host "Building Array List of Servers iLO" -ForegroundColor White -BackgroundColor Blue  
 LogWrite -level "INFO" -message "Building Array List of Servers iLO"
-$computes = (Get-HPOVServer -ApplianceConnection $ConnectedSessions | Where-Object {$_.mpmodel -eq "iLO5" -and $_.mpfirmwareVersion -eq "2.72 Sep 04 2022"})
+$computes = (Get-HPOVServer -ApplianceConnection $ConnectedSessions | Where-Object {$_.mpmodel -eq "iLO5" -and $_.mpfirmwareVersion -eq "2.72 Sep 04 2022" -and $_.servername -contains "HDH*"})
  
 #######################################################################################################################
 

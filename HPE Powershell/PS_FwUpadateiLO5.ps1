@@ -13,9 +13,9 @@ $creationDate = (Get-ChildItem $workingFile).CreationTime
 $creationDate = Get-Date -Date "$creationDate" -Format "yyyy-MM-dd"
 $lastModified = (Get-ChildItem $workingFile).LastWriteTime
 $lastModified = Get-Date -Date "$lastModified" -Format "yyyy-MM-dd HH:mm:ss"
-$logPath = "\\hdhx0288\scripts\PS_FwUpadateiLO5\Log\1\"
-$csv = "\\hdhx0288\scripts\PS_FwUpadateiLO5\csv\1"
-$iLO5_Location = "\\hdha4351\o_v_d_idr\HPE\ilo\ilo5\2.78\ilo5_278.bin" <# Location of the iLO5 firmware USE .bin file #> 
+$logPath = ""
+$csv = ""
+$iLO5_Location = "" <# Location of the iLO5 firmware USE .bin file #> 
 
 # Dates
 $date = Get-Date -Format dd_MM_yyyy
@@ -31,7 +31,7 @@ $warnings = 0
 # Import Logging Functions
 Write-Host "Creating LogFile" -ForegroundColor White -BackgroundColor Blue
 
-. "\\hdha4050\Services_D3-3b\Scripts\Logging\Logging_Functions.ps1"
+. "\\Scripts\Logging\Logging_Functions.ps1"
 $logName = "$date.log"
 
 $global:logFile = $logPath + $logName
@@ -91,23 +91,23 @@ catch {
 
 # Disconnect-HPOVMgmt $ConnectedSessions
 try {
-    $Connection1 = Connect-HPOVMgmt -Hostname hdhx0773 -AuthLoginDomain euro1 -Credential $credential 
+    $Connection1 = Connect-HPOVMgmt -Hostname Instance1 -AuthLoginDomain euro1 -Credential $credential 
     Write-Host "Connecting OneView Host $($Connection1.name)" -ForegroundColor White -BackgroundColor Blue
     LogWrite -level "INFO" -message "Connecting OneView Host $($Connection1.name)"
  
-    $Connection2 = Connect-HPOVMgmt -Hostname hdhx0777 -AuthLoginDomain euro1 -Credential $credential 
+    $Connection2 = Connect-HPOVMgmt -Hostname Instance2 -AuthLoginDomain euro1 -Credential $credential 
     Write-Host "Connecting OneView Host $($Connection2.name)" -ForegroundColor White -BackgroundColor Blue    
     LogWrite -level "INFO" -message "Connecting OneView Host $($Connection2.name)"
    
-    $Connection3 = Connect-HPOVMgmt -Hostname hdhm220b1r35e3xflmcl -AuthLoginDomain euro1 -Credential $credential
+    $Connection3 = Connect-HPOVMgmt -Hostname Instance3 -AuthLoginDomain euro1 -Credential $credential
     Write-Host "Connecting OneView Host $($Connection3.name)" -ForegroundColor White -BackgroundColor Blue    
     LogWrite -level "INFO" -message "Connecting OneView Host $($Connection3.name)"
      
-    $Connection4 = Connect-HPOVMgmt -Hostname hdhm402a0r17e3xflmcl -AuthLoginDomain euro1 -Credential $credential
+    $Connection4 = Connect-HPOVMgmt -Hostname Instance4 -AuthLoginDomain euro1 -Credential $credential
     Write-Host "Connecting OneView Host $($Connection4.name)" -ForegroundColor White -BackgroundColor Blue 
     LogWrite -level "INFO" -message  "Connecting OneView Host $($Connection4.name)"
     
-    $Connection5 = Connect-HPOVMgmt -Hostname hdhx0776 -AuthLoginDomain euro1 -Credential $credential
+    $Connection5 = Connect-HPOVMgmt -Hostname Instance5 -AuthLoginDomain euro1 -Credential $credential
     Write-Host "Connecting OneView Host $($Connection5.name)" -ForegroundColor White -BackgroundColor Blue 
     LogWrite -level "INFO" -message "Connecting OneView Host $($Connection5.name)"
 }
@@ -171,47 +171,54 @@ LogWrite -level "INFO" -message "Begin of Updating Process"
 
 ForEach ($compute in $computes) {
 
-    # Capture of the SSO Session Key
-    try {
-        $iloSession = $compute | Get-OVIloSso -IloRestSession
-    }
-    catch {
-        $warn = $_.Exception
-        $message = "[] " + $warn.Message + "  " + $_.InvocationInfo.ScriptLineNumber
-        Write-Host "Device $($compute.serverName) is unavailable or busy" -ForegroundColor Red -BackgroundColor White
-        LogWrite -level "WARNING" -message "Device $($compute.serverName) is unavailable or busy"
-        $warnings = $warnings + 1
-    }
-    $ilosessionkey = $iloSession."X-Auth-Token"
-    Write-Host "Capture SSO Key Session of $($compute.serverName) = $ilosessionkey" -ForegroundColor White -BackgroundColor Blue
-    LogWrite -level "INFO" -message "Capture SSO Key Session of $($compute.serverName) = $ilosessionkey"
-    $iloIP = $compute.mpHostInfo.mpIpAddresses | Where-Object type -ne LinkLocal | ForEach-Object address
-
-    $Ilohostname = $compute  | ForEach-Object { $_.mpHostInfo.mpHostName }
-    $iloModel = $compute  | ForEach-Object mpmodel
-    $serverName = $compute  | ForEach-Object serverName
-    if (! $serverName) { $serverName = "Unnamed" }
-    $Model = $compute  | ForEach-Object Model
-     
-    if ($iloModel -eq "iLO5") {
-
-        $connection = Connect-HPEiLO -Address $iloIP -XAuthToken $ilosessionkey -DisableCertificateAuthentication
-        Write-Host "Connectiong on iLO and updating the Firmware" -ForegroundColor White -BackgroundColor Blue
-        LogWrite -level "INFO" -message "Connectiong on iLO and updating the Firmware"
-
+    $testconnection = Test-Connection $compute -Count 2 -Quiet
+        IF ($testconnection -eq "True"){
+        Write-Host "Begin of Updating Process" -ForegroundColor White -BackgroundColor Blue    
+        LogWrite -level "INFO" -message "Begin of Updating Process"
+        # Capture of the SSO Session Key
         try {
-            $task = Update-HPEiLOFirmware -TPMEnabled -Location $iLO5_location -Connection $connection -Confirm:$False -UploadTimeout 900 -Force
-            Write-Host "$iloModel $iloIP [$Ilohostname - $serverName - $Model]: $($task.statusinfo.message)" -ForegroundColor White -BackgroundColor Blue
-            LogWrite -level "INFO" -message "`n$iloModel $iloIP [$Ilohostname - $serverName - $Model]: $($task.statusinfo.message)"
+            $iloSession = $compute | Get-OVIloSso -IloRestSession
         }
         catch {
-            Write-Host "$iloModel $iloIP [$Ilohostname - $serverName - $Model]: Update Failure !" -ForegroundColor Red -BackgroundColor White
-            LogWrite -level "ERROR" -message "`n$iloModel $iloIP [$Ilohostname - $serverName - $Model]: Update Failure !"
-            $errors = $errors + 1
+            $warn = $_.Exception
+            $message = "[] " + $warn.Message + "  " + $_.InvocationInfo.ScriptLineNumber
+            Write-Host "Device $($compute.serverName) is unavailable or busy" -ForegroundColor Red -BackgroundColor White
+            LogWrite -level "WARNING" -message "Device $($compute.serverName) is unavailable or busy"
+            $warnings = $warnings + 1
         }
-       
+        $ilosessionkey = $iloSession."X-Auth-Token"
+        Write-Host "Capture SSO Key Session of $($compute.serverName) = $ilosessionkey" -ForegroundColor White -BackgroundColor Blue
+        LogWrite -level "INFO" -message "Capture SSO Key Session of $($compute.serverName) = $ilosessionkey"
+        $iloIP = $compute.mpHostInfo.mpIpAddresses | Where-Object type -ne LinkLocal | ForEach-Object address
+
+        $Ilohostname = $compute  | ForEach-Object { $_.mpHostInfo.mpHostName }
+        $iloModel = $compute  | ForEach-Object mpmodel
+        $serverName = $compute  | ForEach-Object serverName
+        if (! $serverName) { $serverName = "Unnamed" }
+        $Model = $compute  | ForEach-Object Model
+        
+        if ($iloModel -eq "iLO5") {
+
+            $connection = Connect-HPEiLO -Address $iloIP -XAuthToken $ilosessionkey -DisableCertificateAuthentication -Force
+            Write-Host "Connectiong on iLO and updating the Firmware" -ForegroundColor White -BackgroundColor Blue
+            LogWrite -level "INFO" -message "Connectiong on iLO and updating the Firmware"
+
+            try {
+                $task = Update-HPEiLOFirmware -TPMEnabled -Location $iLO5_location -Connection $connection -Confirm:$False -UploadTimeout 900 -Force
+                Write-Host "$iloModel $iloIP [$Ilohostname - $serverName - $Model]: $($task.statusinfo.message)" -ForegroundColor White -BackgroundColor Blue
+                LogWrite -level "INFO" -message "`n$iloModel $iloIP [$Ilohostname - $serverName - $Model]: $($task.statusinfo.message)"
+            }
+            catch {
+                Write-Host "$iloModel $iloIP [$Ilohostname - $serverName - $Model]: Update Failure !" -ForegroundColor Red -BackgroundColor White
+                LogWrite -level "ERROR" -message "`n$iloModel $iloIP [$Ilohostname - $serverName - $Model]: Update Failure !"
+                $errors = $errors + 1
+            }
+            
+        }Else{
+            Write-Host "$compute is not online" -ForegroundColor White -BackgroundColor Blue   
+            LogWrite -level "ERROR" -message "$compute is not online"
+        }
     }
-    
 }
 
 Start-Sleep -Seconds 30

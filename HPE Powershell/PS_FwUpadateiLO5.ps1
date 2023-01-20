@@ -221,6 +221,18 @@ ForEach ($compute in $computes) {
     }
 }
 
+# Adding Waiting time to refresh information on OV and get new Reports
+# time 10 min in seconds 600 seconds
+
+$duration = 600
+$step = 1
+
+for ($i = 1; $i -le $duration; $i += $step) {
+    Start-Sleep -Seconds $step
+    $percentComplete = [int]($i / $duration * 100)
+    Write-Progress -Activity "Waiting 10 min to OneView Refresh new iLO Version" -Status "Time elapsed: $i seconds" -PercentComplete $percentComplete
+}
+
 Start-Sleep -Seconds 30
 
 Write-Host "Gettiing new Firmware Version After Updated" -ForegroundColor White -BackgroundColor Blue   

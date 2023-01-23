@@ -223,7 +223,7 @@ ForEach ($compute in $computes) {
 
 # Adding Waiting time to refresh information on OV and get new Reports
 # time 10 min in seconds 600 seconds
-IF ($computes -ne 0){
+IF ($testconnection -eq "True"){
     $duration = 600
     $step = 1
 

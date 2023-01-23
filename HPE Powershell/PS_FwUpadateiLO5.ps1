@@ -223,69 +223,72 @@ ForEach ($compute in $computes) {
 
 # Adding Waiting time to refresh information on OV and get new Reports
 # time 10 min in seconds 600 seconds
+IF ($computes -ne 0){
+    $duration = 600
+    $step = 1
 
-$duration = 600
-$step = 1
-
-for ($i = 1; $i -le $duration; $i += $step) {
-    Start-Sleep -Seconds $step
-    $percentComplete = [int]($i / $duration * 100)
-    Write-Progress -Activity "Waiting 10 min to OneView Refresh new iLO Version" -Status "Time elapsed: $i seconds" -PercentComplete $percentComplete
-}
-
-Start-Sleep -Seconds 30
-
-Write-Host "Gettiing new Firmware Version After Updated" -ForegroundColor White -BackgroundColor Blue   
-LogWrite -level "INFO" -message "Gettiing new Firmware Version After Updated"
-
-Get-HPOVServer -ApplianceConnection $ConnectedSessions | Where-Object mpmodel -eq "iLO5" | Select-Object ServerName, mpfirmwareVersion |
-ForEach-Object {
-    new-object psobject -Property @{
-        ServerName         = $_.servername
-        NewFirmwareVersion = $_.mpfirmwareVersion
+    for ($i = 1; $i -le $duration; $i += $step) {
+        Start-Sleep -Seconds $step
+        $percentComplete = [int]($i / $duration * 100)
+        Write-Progress -Activity "Waiting 10 min to OneView Refresh new iLO Version" -Status "Time elapsed: $i seconds" -PercentComplete $percentComplete
     }
-} | Select-Object ServerName, NewFirmwareVersion | 
-Export-Csv -Delimiter "," -Path $csv\NewFirware.csv -NoTypeInformation | Format-Table 
 
-try {
-    $CSVFile = Import-CSV $csv\Firmware.csv -Delimiter ","
-    $results = Import-CSV $csv\NewFirware.csv -Delimiter ","
-}
-catch {
-    $err = $_.Exception
-    $message = "[] " + $err.Message + "  " + $_.InvocationInfo.ScriptLineNumber
-    LogWrite -level "ERROR" -message "$message"
-    $errors = $errors + 1
-}
+    Write-Host "Gettiing new Firmware Version After Updated" -ForegroundColor White -BackgroundColor Blue   
+    LogWrite -level "INFO" -message "Gettiing new Firmware Version After Updated"
 
-Write-Host "Adding Info of New Firmware Version to Exist CSV" -ForegroundColor White -BackgroundColor Blue   
-LogWrite -level "INFO" -message "Adding Info of New Firmware Version to Exist CSV"
+    Get-HPOVServer -ApplianceConnection $ConnectedSessions | Where-Object mpmodel -eq "iLO5" | Select-Object ServerName, mpfirmwareVersion |
+    ForEach-Object {
+        new-object psobject -Property @{
+            ServerName         = $_.servername
+            NewFirmwareVersion = $_.mpfirmwareVersion
+        }
+    } | Select-Object ServerName, NewFirmwareVersion | 
+    Export-Csv -Delimiter "," -Path $csv\NewFirware.csv -NoTypeInformation | Format-Table 
 
-Foreach ($Line in (0..($CSVFile.count - 1))) {
-    $NewFirmware = ($results | Where-Object { $_.ServerName -eq $CSVFile[$line].Servername }).NewFirmwareVersion
-    $CSVFile[$Line] | Add-Member -Name NewFirmwareVersion -Value $NewFirmware -MemberType NoteProperty -Force
-}
+    try {
+        $CSVFile = Import-CSV $csv\Firmware.csv -Delimiter ","
+        $results = Import-CSV $csv\NewFirware.csv -Delimiter ","
+    }
+    catch {
+        $err = $_.Exception
+        $message = "[] " + $err.Message + "  " + $_.InvocationInfo.ScriptLineNumber
+        LogWrite -level "ERROR" -message "$message"
+        $errors = $errors + 1
+    }
 
-try {
-    $CSVFile | Export-CSV 'Firmware.csv' -NoTypeInformation
-}
-catch {
-    $err = $_.Exception
-    $message = "[] " + $err.Message + "  " + $_.InvocationInfo.ScriptLineNumber
-    LogWrite -level "ERROR" -message "$message"
-    $errors = $errors + 1
-}
-Write-Host "Deleting Temp File" -ForegroundColor White -BackgroundColor Blue 
-LogWrite -level "INFO" -message "Deleting Temp File" 
+    Write-Host "Adding Info of New Firmware Version to Exist CSV" -ForegroundColor White -BackgroundColor Blue   
+    LogWrite -level "INFO" -message "Adding Info of New Firmware Version to Exist CSV"
 
-try {
-    Remove-Item '\NewFirware.csv'
-}
-catch {
-    $err = $_.Exception
-    $message = "[] " + $err.Message + "  " + $_.InvocationInfo.ScriptLineNumber
-    LogWrite -level "ERROR" -message "$message"
-    $errors = $errors + 1
+    Foreach ($Line in (0..($CSVFile.count - 1))) {
+        $NewFirmware = ($results | Where-Object { $_.ServerName -eq $CSVFile[$line].Servername }).NewFirmwareVersion
+        $CSVFile[$Line] | Add-Member -Name NewFirmwareVersion -Value $NewFirmware -MemberType NoteProperty -Force
+    }
+
+    try {
+        $CSVFile | Export-CSV 'Firmware.csv' -NoTypeInformation
+    }
+    catch {
+        $err = $_.Exception
+        $message = "[] " + $err.Message + "  " + $_.InvocationInfo.ScriptLineNumber
+        LogWrite -level "ERROR" -message "$message"
+        $errors = $errors + 1
+    }
+    Write-Host "Deleting Temp File" -ForegroundColor White -BackgroundColor Blue 
+    LogWrite -level "INFO" -message "Deleting Temp File" 
+
+    try {
+        Remove-Item '\NewFirware.csv'
+    }
+    catch {
+        $err = $_.Exception
+        $message = "[] " + $err.Message + "  " + $_.InvocationInfo.ScriptLineNumber
+        LogWrite -level "ERROR" -message "$message"
+        $errors = $errors + 1
+    }
+}Else{
+
+    Write-Host "No Servers to be update was found" -ForegroundColor White -BackgroundColor Blue   
+    LogWrite -level "INFO" -message "No Servers to be update was found"
 }
 
 Write-Host "Disconnecting of All OneView Servers" -ForegroundColor White -BackgroundColor Blue       

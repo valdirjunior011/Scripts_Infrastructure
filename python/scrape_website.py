@@ -1,3 +1,5 @@
+# Script Author: Valdir Junior
+# Author E-mail: valdirjunior011@hotmail.comimport csv
 import csv
 import re
 import requests
@@ -23,9 +25,10 @@ print("# Collecting first n job links")
 
 for page in range(25, amountOfJobs, 25):
     print('Page: ' + str(page))
-    html = requests.get('https://www.linkedin.com/jobs/search/?keywords=' + jobName + '&location=' + place + '&start=' + str(page), verify= False)
+    html = requests.get('https://www.linkedin.com/jobs/search/?keywords=' + jobName + '&location=' + place + '&start=' + str(page), verify=False)
     soup = BeautifulSoup(html.text, 'html.parser')
-    joblist = joblist + soup.find(class_='jobs-search__results-list').findAll('a', { 'class' : 'base-card__full-link' })
+    joblist = joblist + soup.find(class_='jobs-search__results-list').findAll('a', {'class': 'base-card__full-link'})
+
 print("# Filtering jobs")
 
 filteredJobs = []
@@ -36,9 +39,12 @@ for job in joblist:
 
     jobHtml = requests.get(str(link), verify=False)
     jobSoup = BeautifulSoup(jobHtml.text, 'html.parser')
-    
+
     description = jobSoup.find(class_='show-more-less-html__markup')
-    found = description.findAll(string=re.compile(r"\bKubernetes\b",re.I))
-    if found:
-        print('Found:', str(name))
-        f.writerow([name, link])
+    if description:
+        found = description.findAll(string=re.compile(r"\bKubernetes\b", re.I))
+        if found:
+            print('Found:', str(name))
+            f.writerow([name, link])
+    else:
+        print('Job description not found for:', str(name))

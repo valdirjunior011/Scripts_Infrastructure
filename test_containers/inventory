@@ -1,0 +1,16 @@
+# Hosts
+[example_t2_instance]
+# List of t2 instances in the eu-central-1 region
+ec2-18-184-176-146.eu-central-1.compute.amazonaws.com
+ec2-3-125-48-228.eu-central-1.compute.amazonaws.com
+ec2-3-79-20-162.eu-central-1.compute.amazonaws.com
+ec2-18-194-33-229.eu-central-1.compute.amazonaws.com
+ec2-18-195-125-154.eu-central-1.compute.amazonaws.com
+
+[example_t3_instance]
+# List of t3 instances in the eu-central-1 region
+ec2-3-70-9-122.eu-central-1.compute.amazonaws.com
+ec2-3-70-172-41.eu-central-1.compute.amazonaws.com
+ec2-3-74-226-240.eu-central-1.compute.amazonaws.com
+ec2-3-68-66-125.eu-central-1.compute.amazonaws.com
+ec2-3-69-169-93.eu-central-1.compute.amazonaws.com

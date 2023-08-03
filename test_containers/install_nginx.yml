@@ -1,0 +1,17 @@
+---
+- hosts: example_t3_instance, example_t2_instance
+  become: true
+
+  tasks:
+    - name: Install Nginx (for Ubuntu/Debian-based systems)
+      apt:
+        name: nginx
+        state: present
+
+    - name: Generate index.html
+      template:
+        src: templates/index.html.j2
+        dest: /usr/share/nginx/html/index.html
+        owner: nginx
+        group: nginx
+        mode: "0644"

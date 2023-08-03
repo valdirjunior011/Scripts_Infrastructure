@@ -3,6 +3,12 @@
   become: true
 
   tasks:
+    - name: Update apt cache (for Ubuntu/Debian-based systems)
+      raw: sudo apt-get update
+
+    - name: Install Python (for Ubuntu/Debian-based systems)
+      raw: sudo apt-get install -y python3-minimal
+      
     - name: Install Nginx (for Ubuntu/Debian-based systems)
       apt:
         name: nginx

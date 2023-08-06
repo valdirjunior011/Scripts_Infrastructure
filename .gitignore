@@ -2,4 +2,5 @@
 \.terraform
 \access_query.ps1
 \variables.tf
+\ansible.cfg
 \terraform.*

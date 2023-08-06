@@ -1,0 +1,80 @@
+- hosts: EC2_Instances, Teste
+  become: yes
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+    
+    - name: Install Apache
+      apt:
+        name:
+          - apache2   # Install Apache package
+          #- git-all
+        state: present
+
+    - name: Create a new index.html file
+      ansible.builtin.template:
+        src: templates/index.html.j2
+        dest: /var/www/html/index.html
+        owner: www-data
+        group: www-data
+        mode: "0644"
+
+    - name: Set the location index directive
+      ansible.builtin.lineinfile:
+        path: /etc/apache2/sites-available/000-default.conf
+        line: "DirectoryIndex index.html"
+        state: present
+
+    - name: Reload Apache
+      ansible.builtin.service:
+        name: apache2
+        state: reloaded
+
+    - name: Create Directory
+      ansible.builtin.file:
+        path: /giropops-senhas/
+        state: directory
+        mode: '0755'
+        owner: ubuntu
+        group: ubuntu
+
+    - name: Copy Directory to Remote Server
+      ansible.builtin.copy:
+        src: /Users/valdirjunior011/Desktop/Git/Scripts_Infrastructure/test_containers/giropops-senhas/
+        dest: /giropops-senhas/
+
+    - name: Install Python and pip
+      apt:
+        name: 
+          - python3
+          - python3-pip
+        state: present
+      become: yes
+
+    - name: Install Flask and dependencies
+      pip:
+        name: 
+          - Flask==2.0.3 
+          - redis
+          - prometheus-client==0.16.0
+        state: present
+
+    - name: Redis Server Start
+      command: redis-server
+
+    - name: Configure Flask App
+      command: |
+        cd /
+        export FLASK_APP=app.py
+        export FLASK_ENV=production
+        export REDIS_HOST=localhost
+      become_user: ubuntu
+
+    - name: Start Flask App
+      command: flask run --host=0.0.0.0 --port=5000
+      async: 3600
+      poll: 0
+      ignore_errors: yes
+      become_user: root #ubuntu

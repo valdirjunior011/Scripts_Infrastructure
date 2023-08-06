@@ -1,16 +1,13 @@
 #!/bin/bash
 
-# Retrieve the public IPs from Terraform output
-public_ips_example_1=$(terraform output -raw example_1_public_ips)
-public_ips_example_2=$(terraform output -raw example_2_public_ips)
+# Read the input from Terraform output
+input_file=$(terraform output public_ip)
+output_file="inventory"
 
-# Generate the Ansible inventory file in the desired format
-echo "[example_1]"
-for ip in $public_ips_example_1; do
-    echo "${ip}"
-done
+# Remove unnecessary characters from input and write to output file
+echo "$input_file" | tr -d '["], ' > "$output_file"
 
-echo "[example_2]"
-for ip in $public_ips_example_2; do
-    echo "${ip}"
-done
+echo "Extracted instances:"
+cat "$output_file"
+
+echo "Extraction complete. Output saved to $output_file."

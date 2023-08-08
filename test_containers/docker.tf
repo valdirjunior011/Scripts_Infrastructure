@@ -23,7 +23,7 @@ resource "docker_image" "giropops_image" {
 
 resource "docker_container" "giropops_container" {
   name  = "giropops_container"
-  image = docker_image.nginx_image.latest
+  image = docker_image.giropops_image.latest
   ports {
     internal = 5000
     external = 8080

@@ -2,6 +2,22 @@ provider "aws" {
   region = "us-east-1"
 }
 
+data "aws_ami" "latest_ami" {
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  owners = ["099720109477"]
+}
+
 resource "aws_vpc" "example_vpc" {
   cidr_block = "10.0.0.0/16"
 }
@@ -29,7 +45,7 @@ resource "aws_security_group_rule" "web_ingress" {
 
 resource "aws_instance" "example_instance" {
   count         = 2
-  ami           = "ami-0c55b159cbfafe1f0"
+  ami           = data.aws_ami.latest_ami.id
   instance_type = "t2.micro"
   subnet_id     = aws_subnet.public_subnet[count.index].id
   security_groups = [aws_security_group.web_sg.name]

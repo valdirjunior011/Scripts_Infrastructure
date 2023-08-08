@@ -33,6 +33,13 @@ resource "aws_instance" "example_instance" {
   instance_type = "t2.micro"
   subnet_id     = aws_subnet.public_subnet[count.index].id
   security_groups = [aws_security_group.web_sg.name]
+
+  lifecycle {
+    precondition {
+      condition = data.aws_ami.latest_ami.architecture == "x86_64"
+      error_message = "The selected AMI must be for the x86_64 architecture."
+    }
+  }
 }
 
 resource "aws_elb" "example_elb" {

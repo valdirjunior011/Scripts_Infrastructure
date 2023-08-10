@@ -21,11 +21,15 @@ resource "docker_image" "giropops_image" {
 }
 
 resource "docker_container" "giropops_container" {
-  name  = "giropops-senhas"
+  count = 2
+  name  = "giropops-senhas${count.index + 1}"
   image = docker_image.giropops_image.name
-  ports {
-    internal = 5000
-    external = 8080
+  dynamic "ports" {
+    for_each = count.index == 0 ? [1] : [0]
+    content {
+      internal = 5000
+      external = ports.value == 0 ? 8080 : 8081
+    }
   }
   networks_advanced {
     name = docker_network.my_network.name
@@ -59,7 +63,11 @@ locals {
 }
 
 output "container_info" {
-  value = "Name: ${docker_container.giropops_container.name} IP:${docker_container.giropops_container.network_data[0].ip_address} And Name: ${docker_container.redis_container.name} IP: ${docker_container.redis_container.network_data[0].ip_address}"
+  value = concat(
+    ["Name: ${docker_container.giropops_container[0].name} IP:${docker_container.giropops_container[0].network_data[0].ip_address}"],
+    ["Name: ${docker_container.giropops_container[1].name} IP:${docker_container.giropops_container[1].network_data[0].ip_address}"],
+    ["Name: ${docker_container.redis_container.name} IP: ${docker_container.redis_container.network_data[0].ip_address}"]
+  )
 }
 output "giropops_trivy_scan" {
   value = local.giropops_trivy_output

@@ -1,9 +1,13 @@
-name: build
+name: Scan Infra as Code
 on:
-  push:
-    branches:
-      - main
-  pull_request:
+    push:
+      branches:
+        - "master"
+    pull_request:
+      branches:
+        - "master"
+    schedule:
+      - cron: '28 6 * * 2'
 jobs:
   build:
     name: IAC Scan

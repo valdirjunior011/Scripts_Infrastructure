@@ -1,0 +1,27 @@
+name: Trivy Source Code Scan
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  trivy_scan:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install Trivy
+      run: |
+        wget https://github.com/aquasecurity/trivy/releases/download/v0.19.2/trivy_0.19.2_Linux-64bit.tar.gz
+        tar zxvf trivy_0.19.2_Linux-64bit.tar.gz
+        sudo mv trivy /usr/local/bin/
+        rm trivy_0.19.2_Linux-64bit.tar.gz
+
+    - name: Run Trivy scan on source code
+      run: |
+        trivy fs --exit-code 1 .
+

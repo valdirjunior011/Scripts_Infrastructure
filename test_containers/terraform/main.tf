@@ -47,6 +47,7 @@ resource "aws_security_group" "ssh_sg" {
     protocol      = "-1"
     from_port     = 0
     to_port       = 0
+    description = "Allow Connection" 
   }
 }
 

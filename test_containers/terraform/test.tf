@@ -56,7 +56,10 @@ resource "aws_instance" "example_instance" {
   subnet_id     = aws_subnet.public_subnet[count.index].id
   security_groups = [aws_security_group.web_sg.name]
   metadata_options {
-    encrypted = "required"
+    http_tokens = "required"
+  }
+  root_block_device {
+    encrypted = true
   }
   lifecycle {
     precondition {
@@ -85,7 +88,12 @@ resource "aws_launch_configuration" "example_lc" {
   instance_type = "t2.micro"
 
   security_groups = [aws_security_group.web_sg.name]
-
+  metadata_options {
+    http_tokens = "required"
+  }
+  root_block_device {
+    encrypted = true
+  }
   lifecycle {
     create_before_destroy = true
   }

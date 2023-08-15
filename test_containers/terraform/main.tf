@@ -9,6 +9,7 @@ resource "aws_key_pair" "key" {
 
 resource "aws_security_group" "ssh_sg" {
   name_prefix = "ssh-sg-"
+  description = "security group for allow ports"
 
   ingress {
     description = "SSH from anywhere"

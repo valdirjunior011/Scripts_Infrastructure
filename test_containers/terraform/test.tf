@@ -38,6 +38,7 @@ resource "aws_subnet" "public_subnet" {
 
 resource "aws_security_group" "web_sg" {
   name_prefix = "web-"
+  description = "Web Security Group"
 }
 
 resource "aws_security_group_rule" "web_ingress" {
@@ -47,6 +48,7 @@ resource "aws_security_group_rule" "web_ingress" {
   to_port           = 80
   protocol          = "tcp"
   cidr_blocks = var.allowed_cidr_blocks
+  description = "HTTP Port"
 }
 
 resource "aws_instance" "example_instance" {

@@ -10,7 +10,7 @@ on:
     - cron: '28 6 * * 2'
 jobs:
   build:
-    name: Build
+    name: Scan Repo
     runs-on: ubuntu-latest 
     
     steps:

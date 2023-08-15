@@ -9,8 +9,7 @@
     - name: Install Apache
       apt:
         name:
-          - apache2   # Install Apache package
-          #- git-all
+          - apache2
         state: present
 
     - name: Create a new index.html file

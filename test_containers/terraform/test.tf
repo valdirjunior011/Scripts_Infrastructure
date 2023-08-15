@@ -19,13 +19,13 @@ data "aws_ami" "latest_ami" {
 }
 
 resource "aws_vpc" "example_vpc" {
-  cidr_block = "10.0.0.0/16"
+  cidr_block = var.allowed_cidr_blocks
 }
 resource "aws_flow_log" "example_flow_log" {
-  name           = "example-flow-log"
-  log_group_name = "/aws/vpc/example-vpc-flow-log"
-  traffic_type   = "ALL"
-  resource_id    = aws_vpc.example_vpc.id
+  name        = "example-flow-log"
+  log_destination = "arn:aws:logs:us-east-1:123456789012:destination-arn"
+  traffic_type = "ALL"
+  resource_id = aws_vpc.example_vpc.id
 }
 
 resource "aws_subnet" "public_subnet" {

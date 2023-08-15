@@ -35,6 +35,22 @@ resource "aws_subnet" "public_subnet" {
   availability_zone       = "us-east-1${chr(97 + count.index)}"
   map_public_ip_on_launch = false
 }
+resource "aws_subnet" "internal_subnet" {
+  count       = 1
+  vpc_id      = aws_vpc.example_vpc.id
+  cidr_block  = "10.0.1.0/24"
+  availability_zone = element(var.availability_zones, count.index)
+
+  tags = {
+    Name = "Internal Subnet ${count.index + 1}"
+  }
+}
+
+variable "availability_zones" {
+  type    = list(string)
+  default = ["us-east-1a", "us-east-1b"]  # Adjust with your preferred availability zones
+}
+
 
 resource "aws_security_group" "web_sg" {
   name_prefix = "web-"
@@ -72,9 +88,10 @@ resource "aws_instance" "example_instance" {
 }
 
 resource "aws_elb" "example_elb" {
-  name               = "example-elb"
-  subnets            = aws_subnet.public_subnet.*.id
-  security_groups   = [aws_security_group.web_sg.id]
+  name        = "example-elb"
+  subnets     = aws_subnet.internal_subnet.*.id
+  internal    = true  # Set the ELB to be internal
+  security_groups = [aws_security_group.web_sg.id]
 
   listener {
     instance_port     = 80
@@ -83,6 +100,7 @@ resource "aws_elb" "example_elb" {
     lb_protocol       = "http"
   }
 }
+
 
 resource "aws_launch_configuration" "example_lc" {
   name_prefix   = "example-lc-"

@@ -15,7 +15,7 @@ resource "aws_security_group" "ssh_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.allowed_cidr_blocks
   }
 
   ingress {
@@ -23,7 +23,7 @@ resource "aws_security_group" "ssh_sg" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.allowed_cidr_blocks
   }
 
   ingress {
@@ -31,7 +31,7 @@ resource "aws_security_group" "ssh_sg" {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.allowed_cidr_blocks
   }
 
   ingress {
@@ -39,11 +39,11 @@ resource "aws_security_group" "ssh_sg" {
     from_port   = 5000
     to_port     = 5000
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]   
+    cidr_blocks = var.allowed_cidr_blocks   
   }
 
   egress {
-    cidr_blocks    = ["0.0.0.0/0"]
+    cidr_blocks = var.allowed_cidr_blocks
     protocol      = "-1"
     from_port     = 0
     to_port       = 0

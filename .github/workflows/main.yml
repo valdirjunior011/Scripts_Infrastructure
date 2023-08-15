@@ -24,4 +24,9 @@ jobs:
     - name: Run Trivy scan on source code
       run: |
         trivy fs --exit-code 1 .
-
+      
+    - name: Upload Trivy scan results to GitHub Security tab
+      if: ${{ job.status == 'failure' }}
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'

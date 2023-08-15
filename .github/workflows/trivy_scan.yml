@@ -8,32 +8,24 @@ on:
   schedule:
     - cron: '28 6 * * 2'
 
-jobs:
-  trivy_scan:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: '16'
-
-    - name: Install Trivy
-      run: |
-        wget https://github.com/aquasecurity/trivy/releases/download/v0.19.2/trivy_0.19.2_Linux-64bit.tar.gz
-        tar zxvf trivy_0.19.2_Linux-64bit.tar.gz
-        sudo mv trivy /usr/local/bin/
-        rm trivy_0.19.2_Linux-64bit.tar.gz
-
-    - name: Run Trivy scan on source code
-      run: |
-        trivy fs --exit-code 1 .
-      
-    - name: Upload Trivy scan results to GitHub Security tab
-      if: ${{ job.status == 'failure' }}
-      uses: github/codeql-action/upload-sarif@v2
-      with:
-        sarif_file: 'trivy-results.sarif'
+    jobs:
+      build:
+        name: Build
+        runs-on: ubuntu-20.04
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v3
+    
+          - name: Run Trivy vulnerability scanner in repo mode
+            uses: aquasecurity/trivy-action@master
+            with:
+              scan-type: 'fs'
+              ignore-unfixed: true
+              format: 'sarif'
+              output: 'trivy-results.sarif'
+              severity: 'CRITICAL'
+    
+          - name: Upload Trivy scan results to GitHub Security tab
+            uses: github/codeql-action/upload-sarif@v2
+            with:
+              sarif_file: 'trivy-results.sarif'

@@ -44,6 +44,9 @@ resource "docker_container" "giropops_container" {
     host_path = "~/shared_volume/"
     volume_name = "${docker_volume.shared_volume.name}"
   }
+  env {
+    dbpass = "123@qwertz"
+  }
 }
 resource "docker_image" "redis_image" {
   name         = "cgr.dev/chainguard/redis"

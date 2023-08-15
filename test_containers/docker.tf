@@ -20,6 +20,10 @@ resource "docker_image" "giropops_image" {
   keep_locally = false
 }
 
+resource "docker_volume" "shared_volume" {
+  name = "shared_volume"
+}
+
 resource "docker_container" "giropops_container" {
   count = 2
   name  = "giropops-senhas${count.index + 1}"
@@ -34,6 +38,12 @@ resource "docker_container" "giropops_container" {
   networks_advanced {
     name = docker_network.my_network.name
   }
+  volumes {
+    container_path = "/volume"
+    read_only = true
+    host_path = "~/shared_volume/"
+    volume_name = "${docker_volume.shared_volume.name}"
+  }
 }
 resource "docker_image" "redis_image" {
   name         = "cgr.dev/chainguard/redis"
@@ -45,6 +55,12 @@ resource "docker_container" "redis_container" {
 
   networks_advanced {
     name = docker_network.my_network.name
+  }
+  volumes {
+    container_path = "/volume"
+    read_only = true
+    host_path = "~/shared_volume/"
+    volume_name = "${docker_volume.shared_volume.name}"
   }
 }
 resource "null_resource" "trivy" {

@@ -21,13 +21,19 @@ data "aws_ami" "latest_ami" {
 resource "aws_vpc" "example_vpc" {
   cidr_block = "10.0.0.0/16"
 }
+resource "aws_flow_log" "example_flow_log" {
+  name           = "example-flow-log"
+  log_group_name = "/aws/vpc/example-vpc-flow-log"
+  traffic_type   = "ALL"
+  resource_id    = aws_vpc.example_vpc.id
+}
 
 resource "aws_subnet" "public_subnet" {
   count                   = 2
   vpc_id                  = aws_vpc.example_vpc.id
   cidr_block              = "10.0.${count.index + 1}.0/24"
   availability_zone       = "us-east-1${chr(97 + count.index)}"
-  map_public_ip_on_launch = true
+  map_public_ip_on_launch = false
 }
 
 resource "aws_security_group" "web_sg" {
@@ -40,7 +46,7 @@ resource "aws_security_group_rule" "web_ingress" {
   from_port         = 80
   to_port           = 80
   protocol          = "tcp"
-  cidr_blocks      = ["0.0.0.0/0"]
+  cidr_blocks = var.allowed_cidr_blocks
 }
 
 resource "aws_instance" "example_instance" {
@@ -49,7 +55,9 @@ resource "aws_instance" "example_instance" {
   instance_type = "t2.micro"
   subnet_id     = aws_subnet.public_subnet[count.index].id
   security_groups = [aws_security_group.web_sg.name]
-
+  metadata_options {
+    encrypted = "required"
+  }
   lifecycle {
     precondition {
       condition = data.aws_ami.latest_ami.architecture == "x86_64"

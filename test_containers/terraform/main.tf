@@ -88,6 +88,9 @@ resource "aws_instance" "t3_instance" {
   key_name      = aws_key_pair.key.key_name
   security_groups = [aws_security_group.ssh_sg.name]  # Use the security group ID instead of name
 
+  root_block_device {
+    encrypted = true
+  }
   tags = {
     Name = "Instance_t3-${count.index + 1}"
   }

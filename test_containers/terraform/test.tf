@@ -24,11 +24,18 @@ resource "aws_s3_bucket" "vpc_flow_logs" {
   versioning {
     enabled = true
   }
+  server_side_encryption_configuration {
+    rule {
+      apply_server_side_encryption_by_default {
+        sse_algorithm = "AES256"
+      }
+    }
+  }
   lifecycle {
     prevent_destroy = true
     rule {
       id = "expire-old-logs"
-      status = "Enable"
+      status = "Enabled"
       prefix = ""
       enabled = true
       transitions {
@@ -40,8 +47,42 @@ resource "aws_s3_bucket" "vpc_flow_logs" {
       }
     }
   }
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+  logging {
+    target_bucket = aws_s3_bucket.vpc_flow_logs.bucket
+    target_prefix = "access-logs/"  
+  }
+}
+resource "aws_flow_log" "vpc_flow_logs" {
+  iam_role_arn    = aws_iam_role.vpc_flow_logs.arn
+  log_destination = aws_s3_bucket.vpc_flow_logs.arn
+  traffic_type    = "ALL"
+  vpc_id          = aws_vpc.my_vpc.id
+}
+resource "aws_iam_role" "vpc_flow_logs" {
+  name = "vpc_flow_logs"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "vpc.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
 }
 
+resource "aws_iam_role_policy_attachment" "vpc_flow_logs" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+  role       = aws_iam_role.vpc_flow_logs.name
+}
 resource "aws_vpc" "example_vpc" {
   cidr_block = var.allowed_cidr_blocks
 }

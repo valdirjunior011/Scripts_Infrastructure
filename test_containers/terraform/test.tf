@@ -48,16 +48,17 @@ resource "aws_s3_bucket" "vpc_flow_logs" {
       }
     }
   }
-  public_access_block_configuration{
-    block_public_acls       = true
-    block_public_policy     = true
-    ignore_public_acls      = true
-    restrict_public_buckets = true
-  }
   logging {
     target_bucket = aws_s3_bucket.vpc_flow_logs.bucket
     target_prefix = "access-logs/"  
   }
+}
+resource "aws_s3_bucket_public_access_block" "block_access"{
+  bucket = aws_s3_bucket.vpc_flow_logs.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 resource "aws_flow_log" "vpc_flow_logs" {
   iam_role_arn    = aws_iam_role.vpc_flow_logs.arn

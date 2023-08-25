@@ -27,7 +27,8 @@ resource "aws_s3_bucket" "vpc_flow_logs" {
   server_side_encryption_configuration {
     rule {
       apply_server_side_encryption_by_default {
-        sse_algorithm = "AES256"
+        sse_algorithm = "aws:kms"  # Use AWS Key Management Service
+        kms_master_key_id = "arn:aws:kms:<region>:<account-id>:key/<key-id>" 
       }
     }
   }
@@ -47,10 +48,12 @@ resource "aws_s3_bucket" "vpc_flow_logs" {
       }
     }
   }
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
+  public_access_block_configuration{
+    block_public_acls       = true
+    block_public_policy     = true
+    ignore_public_acls      = true
+    restrict_public_buckets = true
+  }
   logging {
     target_bucket = aws_s3_bucket.vpc_flow_logs.bucket
     target_prefix = "access-logs/"  
@@ -60,7 +63,7 @@ resource "aws_flow_log" "vpc_flow_logs" {
   iam_role_arn    = aws_iam_role.vpc_flow_logs.arn
   log_destination = aws_s3_bucket.vpc_flow_logs.arn
   traffic_type    = "ALL"
-  vpc_id          = aws_vpc.my_vpc.id
+  vpc_id          = aws_vpc.example_vpc.id
 }
 resource "aws_iam_role" "vpc_flow_logs" {
   name = "vpc_flow_logs"

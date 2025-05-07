@@ -1,0 +1,36 @@
+# .github/workflows/sync-workflow.yml
+name: Sync Workflow to Repos
+
+on:
+  push:
+    branches:
+      - main  # or the branch you use
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout template repo
+        uses: actions/checkout@v3
+
+      - name: Sync workflow to target repos
+        uses: repo-sync/github-sync@v1
+        with:
+          source_repo: ${{ github.repository }}
+          source_branch: main
+          source_path: ".github/workflows/generate-datas.yml"
+          destination_path: ".github/workflows/generate-datas.yml"
+          destination_repos: |
+            valdirjunior011/valdirjunior011.github.io
+            valdirjunior011/newdevice
+            valdirjunior011/webpage           
+            valdirjunior011/zmk-config
+            valdirjunior011/miryoku_zmk
+            valdirjunior011/vial-qmk
+            valdirjunior011/NewMac
+            valdirjunior011/kickstart.nvim
+            valdirjunior011/script-commands
+            valdirjunior011/Descomplicando_Kubernetes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

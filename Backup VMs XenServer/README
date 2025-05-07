@@ -1,0 +1,48 @@
+==========================
+== Installation and How Use ==
+==========================
+
+First, Copy this script to your XenServer (or XenServer poll), AND turn it into an executable.
+A default for storing this file is:
+
+/usr/local/bin/snapback.sh.
+
+Next, create a cron task so that the script can be run daily after 1AM.
+The file to create is /etc/cron.d/backup with the following line:
+
+2 1 \* \* \* root /usr/local/bin/snapback.sh > /var/log/snapback.log 2>&1
+
+This line will also add the logging actions to the file /var/log/snapback.log
+You now need to edit the script and change the variable DEST_SR to the UUID of your storage where you intend to store your backups.
+
+\*To find this UUID just click on your SR in Xencenter, the UUID value will be shown similar to this example "2c01dc26-f525-70d6-dedf-00baaec76645".
+
+Finally you need to configure your VM backup and retention policy.
+In Xencenter left click on your VM and select "Properties",
+Click "Custom Fields" and then "Edit Custom Fields". You must add two texts to the fields:
+
+backup: this can be "daily", "weekly" or "monthly". If it is set to
+weekly by default it will run on a Sunday, and if set to monthly
+it will run on the first Sunday of the month. This day can be changed in the
+top of the script - see the WEEKLY_ON and MONTHLY_ON variables.
+
+retain: how many previous backups (in addition to the currently running files)
+backup) to keep. So setting it to a value of "2" would mean that after
+one backup is run, you will have three backups in total.
+
+The script will look for these fields when it runs and ignore any VM
+that does not have them set. You can also see them in the Xencenter summary
+summary and properties for the VM.
+
+Now you can run the script manually or wait until the cron job
+job starts. It will produce a detailed log in the console (or log file if
+run cron) and when finished you will see the backup of your
+VMs listed in Xencenter.
+
+If you find that this clutters up Xencenter's display a bit, you can always
+hide them (View->Server View->Custom Templates).
+
+To restore a VM from a backup, right click and choose "New Backup Template".
+backup template".
+
+That's all
